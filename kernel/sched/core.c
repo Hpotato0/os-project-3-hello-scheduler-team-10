@@ -2148,6 +2148,8 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 
+	INIT_LIST_HEAD(&p->wrr_se.run_list);
+
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	p->se.cfs_rq			= NULL;
 #endif
@@ -2312,11 +2314,17 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	 */
 	if (unlikely(p->sched_reset_on_fork)) {
 		if (task_has_dl_policy(p) || task_has_rt_policy(p)) {
-			p->policy = SCHED_NORMAL;
+			//p->policy = SCHED_NORMAL;
+			p-> policy = SCHED_WRR; // any problem?
 			p->static_prio = NICE_TO_PRIO(0);
 			p->rt_priority = 0;
-		} else if (PRIO_TO_NICE(p->static_prio) < 0)
+			p->wrr_se.weight = 10;
+			p->wrr_se.rem_time_slice = 100;
+		} 
+		/* Don't need CFS anymore
+		else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
+		*/
 
 		p->prio = p->normal_prio = __normal_prio(p);
 		set_load_weight(p, false);
@@ -2333,7 +2341,7 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
 	else
-		p->sched_class = &fair_sched_class;
+		p->sched_class = &wrr_sched_class;
 
 	init_entity_runnable_average(&p->se);
 
@@ -3059,6 +3067,7 @@ void scheduler_tick(void)
 #ifdef CONFIG_SMP
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
+	//TODO: Implement load_balance
 #endif
 }
 
@@ -3838,7 +3847,7 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 			p->dl.dl_boosted = 0;
 		if (rt_prio(oldprio))
 			p->rt.timeout = 0;
-		p->sched_class = &fair_sched_class;
+		p->sched_class = &wrr_sched_class;
 	}
 
 	p->prio = prio;
@@ -4094,7 +4103,7 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
 	else
-		p->sched_class = &fair_sched_class;
+		p->sched_class = &wrr_sched_class;
 }
 
 /*
@@ -4244,6 +4253,8 @@ recheck:
 		if (rt_policy(policy) && attr->sched_priority != p->rt_priority)
 			goto change;
 		if (dl_policy(policy) && dl_param_changed(p, attr))
+			goto change;
+		if (policy == SCHED_WRR)
 			goto change;
 
 		p->sched_reset_on_fork = reset_on_fork;
@@ -5166,6 +5177,7 @@ SYSCALL_DEFINE1(sched_get_priority_max, int, policy)
 	case SCHED_NORMAL:
 	case SCHED_BATCH:
 	case SCHED_IDLE:
+	case SCHED_WRR:
 		ret = 0;
 		break;
 	}
@@ -5193,6 +5205,7 @@ SYSCALL_DEFINE1(sched_get_priority_min, int, policy)
 	case SCHED_NORMAL:
 	case SCHED_BATCH:
 	case SCHED_IDLE:
+	case SCHED_WRR:
 		ret = 0;
 	}
 	return ret;
@@ -5988,6 +6001,7 @@ void __init sched_init(void)
 		rq->calc_load_active = 0;
 		rq->calc_load_update = jiffies + LOAD_FREQ;
 		init_cfs_rq(&rq->cfs);
+		init_wrr_rq(&rq->wrr);
 		init_rt_rq(&rq->rt);
 		init_dl_rq(&rq->dl);
 #ifdef CONFIG_FAIR_GROUP_SCHED
@@ -6074,6 +6088,7 @@ void __init sched_init(void)
 	idle_thread_set_boot_cpu();
 #endif
 	init_sched_fair_class();
+	init_sched_wrr_class();
 
 	init_schedstats();
 

@@ -144,3 +144,26 @@ const struct sched_class wrr_sched_class = {
         .task_change_group	= task_change_group_wrr,
     #endif
 };
+
+__init void init_sched_wrr_class(void)
+{
+	// TODO : Fill in
+
+	/* Example: cfs
+#ifdef CONFIG_SMP
+	open_softirq(SCHED_SOFTIRQ, run_rebalance_domains);
+
+#ifdef CONFIG_NO_HZ_COMMON
+	nohz.next_balance = jiffies;
+	nohz.next_blocked = jiffies;
+	zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
+#endif
+#endif /* SMP */
+*/
+}
+
+void init_wrr_rq(struct wrr_rq *wrr_rq)
+{
+	INIT_LIST_HEAD(wrr_rq -> front);
+	load = 0;
+}
