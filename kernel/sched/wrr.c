@@ -13,12 +13,12 @@ static inline struct rq rq_of_wrr_rq(struct wrr_rq *wrr){
 static inline struct rq *rq_of_wrr_se(struct sched_wrr_entity *wrr_se)
 {
     struct task_struct *p = wrr_task_of(wrr_se);
-    return 
+    return;
 }
 
 static inline struct rq *rq_of_wrr_rq(struct wrr_rq *wrr)
 {
-    return container_of(wrr, struct rq, wrr)   
+    return container_of(wrr, struct rq, wrr);
 }
 
 
@@ -34,33 +34,83 @@ static inline struct wrr_rq *task_wrr_rq(struct task_struct *p)
     return &task_rq(p)->wrr;
 }
 
-static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
+static inline struct sched_wrr_entity *curr_wrr_se(struct *wrr_rq)
 {
-    // TODO: Fill me
-    struct wrr_rq * wrr_rq;
-    struct sched_wrr_entity  *wrr_se = &p->wrr;
-
-    for_each_s
+    // maybe need debuging. I'm note sure if ite will work corretly -by HS.K
+    return list_first_entry(&wrr_rq->wrr_lsit, struct wrr_rq, wrr_list);
 };
 
-static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
-    // TODO: Fill me
+
+/*
+- NOTE: Before calling dequeue_task_wrr, you have to take a lock
+- Description
+    - Add task to wrr_rq
+    - Update total wrr_rq load, nr_running, and remain time slice of wrr_se
+    - Send a reschedling requeset
+*/
+static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
+{
+    struct wrr_rq * wrr_rq; = task_wrr_rq(p);
+    struct sched_wrr_entity  *wrr_se = &p->wrr;
+
+    list_add_tail(&wrr_se->list_node, & wrr_rq->wrr_lsit);
+
+    resched_curr(rq);
+    // update wrr_rq total load
+    wrr_rq->load += wrr_se->weight;
+    wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
+    add_nr_running(rq, 1);
+    // maybe need to update wrr_se state or time slice?
+};
+
+/*
+- NOTE: Before calling dequeue_task_wrr, you have to take a lock
+- Description
+    - Delete task from wrr_rq
+    - Update totla wrr_rq load, nr_running, and remain time slice of wrr_se
+    - Send a rescheling request 
+*/
+static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) 
+{
+    struct wrr_rq *wrr_rq; = task_wrr_rq(p);
+    struct sched_wrr_entity  *wrr_se = &p->wrr;
+    
+    list_del_init(&wrr_se->list_node);
+
+    resched_curr(rq);
+    // update wrr_rq total load
+    wrr_rq->load -= wrr_se->weight;
+    wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
+    sub_nr_running(rq, 1);
 }
 
-
+/*
+- NOTE:Before calling dequeue_task_wrr, you have to take a lock
+- Desciption
+    - Move an entity wrr_se from first slot of wrr rq to tail slot
+    - As do_sched_yield from core.c calls schdule() fuction, maybe don't have to send a rescheduling request
+*/
 static void yield_task_wrr(struct rq *rq)
 {
     // TODO: Fill me
+    struct wrr_rq *wrr_rq = &rq->wrr_rq;
+    struct sched_wrr_entity *wrr_se = list_first_entry(wrr_rq);
+    list_move_tail(&wrr_se->list_node, &wrr_rq->wrr_list);
+
+    // time slice update
+    // TODO: need to define WRR_TIME_SLICe_UNIT
+    wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
 }
 
+// yield_to_task_wrr use preempt as a argument, so maybe we don't have to implement this fuction
 static bool yield_to_task_wrr(struct rq *rq, struct task_struct *p, bool preempt)
-{
-    // TODO: Fill me
+{    
+    yield_task_wrr(rq);
 }
 
 static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 {
-    // Don't need
+    // Do not need
 }
 
 static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
@@ -103,11 +153,27 @@ static void set_curr_task_wrr(struct rq *rq)
     // do not need
 }
 
+/*
+- NOTE: Before calling dequeue_task_wrr, you have to take a lock
+- Description
+  - check remain time slice of current task and send rescheduling request
+  - task_tick_wrr is not realated with load balance
+*/
 static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 {
-    // TODO: Fill me
+    struct wrr_rq *wrr;
+    struct sched_wrr_entry *wrr_se = &curr->wrr_se;
+
+    wrr_se->rem_time_slice -= WRR_TIME_SLICE_UNIT;
+    if (wrr_se->rem_slice < 0){
+        dequeue_task_wrr(rq, curr, 0);
+        enqueue_task_wrr(rq, curr, 0);
+    }
 }
 
+/*
+    Need to take a lock in task_fork_wrr
+*/
 static void task_fork_wrr(struct task_struct *p)
 {
     // TODO: Fill me
@@ -147,7 +213,7 @@ const struct sched_class wrr_sched_class = {
 	.enqueue_task		= enqueue_task_wrr,// O
 	.dequeue_task		= dequeue_task_wrr, // O
 	.yield_task		= yield_task_wrr, // O
-	.yield_to_task		= yield_to_task_wrr, // O
+	.yield_to_task		= yield_to_task_wrr, // maybe don
 
 	.check_preempt_curr	= check_preempt_wakeup,// X: no preemption needed 
 
