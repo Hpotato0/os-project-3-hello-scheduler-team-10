@@ -1,9 +1,26 @@
 #include "sched.h"
 #include <trace/events/sched.h>
 
+static inline struct task_struct *task_of(struct sched_wrr_entity *wrr_se)
+{
+    return container_of()
+};
+
+
+static inline struct wrr_rq *wrr_rf_of(struct sched_wrr_entity *wrr_se)
+{
+    struct task_struct *p = task_of(wrr_se);
+    struct rq *rq = task_rq(p);
+    return &rq->wrr;
+}
+
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
 {
     // TODO: Fill me
+    struct wrr_rq * wrr_rq;
+    struct sched_wrr_entity  *wrr_se = &p->wrr;
+
+    for_each_s
 };
 
 static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
