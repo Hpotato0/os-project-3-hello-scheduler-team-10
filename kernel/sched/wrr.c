@@ -1,17 +1,37 @@
 #include "sched.h"
 #include <trace/events/sched.h>
 
-static inline struct task_struct *task_of(struct sched_wrr_entity *wrr_se)
+static inline struct task_struct *wrr_task_of(struct sched_wrr_entity *wrr_se)
 {
-    return container_of()
+    return container_of(wrr_se, struct task_struct, wrr_se);
 };
 
+static inline struct rq rq_of_wrr_rq(struct wrr_rq *wrr){
+    return container_of(wrr, struct rq, wrr);
+}
 
-static inline struct wrr_rq *wrr_rf_of(struct sched_wrr_entity *wrr_se)
+static inline struct rq *rq_of_wrr_se(struct sched_wrr_entity *wrr_se)
+{
+    struct task_struct *p = wrr_task_of(wrr_se);
+    return 
+}
+
+static inline struct rq *rq_of_wrr_rq(struct wrr_rq *wrr)
+{
+    return container_of(wrr, struct rq, wrr)   
+}
+
+
+static inline struct wrr_rq *wrr_rq_of_wrr_se(struct sched_wrr_entity *wrr_se)
 {
     struct task_struct *p = task_of(wrr_se);
     struct rq *rq = task_rq(p);
     return &rq->wrr;
+}
+
+static inline struct wrr_rq *task_wrr_rq(struct task_struct *p)
+{
+    return &task_rq(p)->wrr;
 }
 
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
