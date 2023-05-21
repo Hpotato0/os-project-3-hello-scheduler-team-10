@@ -480,7 +480,7 @@ struct cfs_bandwidth { };
 // Wrr-realated fields in a runqueue
 // TODO: FIX ME
 struct wrr_rq {
-	struct list_head front;
+	struct list_head wrr_list;
 	int load;
 }
 
@@ -816,7 +816,6 @@ struct rq {
 	struct wrr_rq		wrr;
 	struct rt_rq		rt;
 	struct dl_rq		dl;
-	struct wrr_rq       wrr;
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	/* list of leaf cfs_rq on this CPU: */
 	struct list_head	leaf_cfs_rq_list;
