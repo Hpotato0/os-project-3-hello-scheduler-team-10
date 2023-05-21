@@ -12,8 +12,8 @@ static inline struct rq rq_of_wrr_rq(struct wrr_rq *wrr){
 
 static inline struct rq *rq_of_wrr_se(struct sched_wrr_entity *wrr_se)
 {
-    struct task_struct *p = wrr_task_of(wrr_se);
-    return;
+    // (?) struct task_struct *p = wrr_task_of(wrr_se);
+    return rq_of_wrr_rq(wrr_se->wrr);
 }
 
 static inline struct rq *rq_of_wrr_rq(struct wrr_rq *wrr)
@@ -115,7 +115,14 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 
 static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
-    // TODO: Fill me
+    // method(1): use prev
+    struct sched_wrr_entity* wrr_se = prev->wrr;
+    if(list_empty(&(wrr_se->list_node)))
+        return NULL;
+    return wrr_task_of(list_entry(wrr_se->list_node->next, struct sched_wrr_entity, list_node));
+
+    // method(2): take the front of the queue
+    // TODO.. 실행되면 queue에서 빠지나? 아님. 엥 그러면 그냥 prev 쓰고 queue_front는 enqueue/dequeue에만 사용해야 할 듯?
 }
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *prev)
@@ -176,7 +183,15 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 */
 static void task_fork_wrr(struct task_struct *p)
 {
-    // TODO: Fill me
+    strut rq *rq = this_rq(); //? task_rq(p)
+    struct rq_flags rf;
+
+    rq_lock(rq, &rf);
+	
+    p->wrr_se->weight = p->parent->wrr_se->weight;
+    p->wrr_se->rem_time_slice = p->wrr_se->weight * WRR_TIME_SLICE_UNIT;// Q) do we need this? when does 'enqueue' happen?
+
+    rq_unlock(rq, &rf);
 }
 
 static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
@@ -186,17 +201,25 @@ static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
 
 static void switched_from_wrr(struct rq *rq, struct task_struct *p)
 {
-    // ?
+    // TODO.. Q) dequeue가 있는데 필요한가?
+    // rq->wrr->load -= p->wrr_se->weight; @J CHECK! if not careful might double-subtract
+    p->wrr_se->rem_time_slice = p->wrr_se->weight * WRR_TIME_SLICE_UNIT;
 }
 
 static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 {
-    // ?
+    // TODO.. Q) enqueue가 있는데 필요한가?
+    p->wrr_se->rem_time_slice = p->wrr_se->weight * WRR_TIME_SLICE_UNIT;
 }
 
+/*
+- NOTE: TODO) what should be the 'default' time slice in wrr..?
+- Description
+    - return the default timeslice of a process.
+*/
 static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
 {
-    // TODO: Fill me
+    return ((task->wrr_se)->weight) * WRR_TIME_SLICE_UNIT;
 }
 
 static void update_curr_wrr(struct rq *rq)
