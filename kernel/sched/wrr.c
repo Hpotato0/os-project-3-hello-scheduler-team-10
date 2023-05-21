@@ -33,7 +33,7 @@ static inline struct wrr_rq *task_wrr_rq(struct task_struct *p)
 static inline struct sched_wrr_entity *curr_wrr_se(struct wrr_rq* wrr)
 {
     // maybe need debuging. I'm note sure if ite will work corretly -by HS.K
-    return list_first_entry(&wrr->wrr_list, struct wrr_rq, wrr_list);
+    return list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node);
 }
 
 
@@ -90,7 +90,7 @@ static void yield_task_wrr(struct rq *rq)
 {
     // TODO: Fill me
     struct wrr_rq *wrr_rq = &rq->wrr;
-    struct sched_wrr_entity *wrr_se = list_first_entry(wrr_rq); //?
+    struct sched_wrr_entity *wrr_se = list_first_entry(&wrr_rq->wrr_list, struct sched_wrr_entity, list_node);
     list_move_tail(&wrr_se->list_node, &wrr_rq->wrr_list);
 
     // time slice update
@@ -102,6 +102,7 @@ static void yield_task_wrr(struct rq *rq)
 static bool yield_to_task_wrr(struct rq *rq, struct task_struct *p, bool preempt)
 {    
     yield_task_wrr(rq);
+    return true;
 }
 
 static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
@@ -184,7 +185,7 @@ static void set_curr_task_wrr(struct rq *rq)
 */
 static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 {
-    struct wrr_rq *wrr;
+    // struct wrr_rq *wrr;
     struct sched_wrr_entity *wrr_se = &curr->wrr_se;
 
     wrr_se->rem_time_slice -= 1;
@@ -243,10 +244,12 @@ static void update_curr_wrr(struct rq *rq)
     // do not need
 }
 
+#ifdef CONFIG_FAIR_GROUP_SCHED   
 static void task_change_group_wrr(struct task_struct *p, int type)
 {
     // do not need
 }
+#endif
 const struct sched_class wrr_sched_class = {
 	.next			= &fair_sched_class, // O
 	.enqueue_task		= enqueue_task_wrr,// O
