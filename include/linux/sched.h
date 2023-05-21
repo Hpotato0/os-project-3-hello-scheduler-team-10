@@ -448,7 +448,7 @@ struct sched_wrr_entity {
 	int weight;
 	unsigned int rem_time_slice; // unit: ms
 	struct wrr_rq * wrr;
-}
+};
 
 struct sched_entity {
 	/* For load-balancing: */

@@ -1,12 +1,14 @@
 #include "sched.h"
 #include <trace/events/sched.h>
 
+#define WRR_TIME_SLICE_UNIT (10 * HZ / 1000) // TODO.. probably # of ticks in 10 ms?
+
 static inline struct task_struct *wrr_task_of(struct sched_wrr_entity *wrr_se)
 {
     return container_of(wrr_se, struct task_struct, wrr_se);
 };
 
-static inline struct rq rq_of_wrr_rq(struct wrr_rq *wrr){
+static inline struct rq *rq_of_wrr_rq(struct wrr_rq *wrr){
     return container_of(wrr, struct rq, wrr);
 }
 
@@ -16,15 +18,9 @@ static inline struct rq *rq_of_wrr_se(struct sched_wrr_entity *wrr_se)
     return rq_of_wrr_rq(wrr_se->wrr);
 }
 
-static inline struct rq *rq_of_wrr_rq(struct wrr_rq *wrr)
-{
-    return container_of(wrr, struct rq, wrr);
-}
-
-
 static inline struct wrr_rq *wrr_rq_of_wrr_se(struct sched_wrr_entity *wrr_se)
 {
-    struct task_struct *p = task_of(wrr_se);
+    struct task_struct *p = wrr_task_of(wrr_se);
     struct rq *rq = task_rq(p);
     return &rq->wrr;
 }
@@ -34,11 +30,11 @@ static inline struct wrr_rq *task_wrr_rq(struct task_struct *p)
     return &task_rq(p)->wrr;
 }
 
-static inline struct sched_wrr_entity *curr_wrr_se(struct *wrr_rq)
+static inline struct sched_wrr_entity *curr_wrr_se(struct wrr_rq* wrr)
 {
     // maybe need debuging. I'm note sure if ite will work corretly -by HS.K
-    return list_first_entry(&wrr_rq->wrr_lsit, struct wrr_rq, wrr_list);
-};
+    return list_first_entry(&wrr->wrr_list, struct wrr_rq, wrr_list);
+}
 
 
 /*
@@ -50,10 +46,10 @@ static inline struct sched_wrr_entity *curr_wrr_se(struct *wrr_rq)
 */
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
 {
-    struct wrr_rq * wrr_rq; = task_wrr_rq(p);
-    struct sched_wrr_entity  *wrr_se = &p->wrr;
+    struct wrr_rq * wrr_rq = task_wrr_rq(p);
+    struct sched_wrr_entity  *wrr_se = &p->wrr_se;
 
-    list_add_tail(&wrr_se->list_node, & wrr_rq->wrr_lsit);
+    list_add_tail(&wrr_se->list_node, & wrr_rq->wrr_list);
 
     resched_curr(rq);
     // update wrr_rq total load
@@ -61,7 +57,7 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
     wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
     add_nr_running(rq, 1);
     // maybe need to update wrr_se state or time slice?
-};
+}
 
 /*
 - NOTE: Before calling dequeue_task_wrr, you have to take a lock
@@ -72,8 +68,8 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
 */
 static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) 
 {
-    struct wrr_rq *wrr_rq; = task_wrr_rq(p);
-    struct sched_wrr_entity  *wrr_se = &p->wrr;
+    struct wrr_rq *wrr_rq = task_wrr_rq(p);
+    struct sched_wrr_entity  *wrr_se = &p->wrr_se;
     
     list_del_init(&wrr_se->list_node);
 
@@ -93,8 +89,8 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
 static void yield_task_wrr(struct rq *rq)
 {
     // TODO: Fill me
-    struct wrr_rq *wrr_rq = &rq->wrr_rq;
-    struct sched_wrr_entity *wrr_se = list_first_entry(wrr_rq);
+    struct wrr_rq *wrr_rq = &rq->wrr;
+    struct sched_wrr_entity *wrr_se = list_first_entry(wrr_rq); //?
     list_move_tail(&wrr_se->list_node, &wrr_rq->wrr_list);
 
     // time slice update
@@ -116,10 +112,10 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
     // method(1): use prev
-    struct sched_wrr_entity* wrr_se = prev->wrr;
+    struct sched_wrr_entity* wrr_se = &prev->wrr_se;
     if(list_empty(&(wrr_se->list_node)))
         return NULL;
-    return wrr_task_of(list_entry(wrr_se->list_node->next, struct sched_wrr_entity, list_node));
+    return wrr_task_of(list_entry((wrr_se->list_node).next, struct sched_wrr_entity, list_node));
 
     // method(2): take the front of the queue
     // TODO.. 실행되면 queue에서 빠지나? 아님. 엥 그러면 그냥 prev 쓰고 queue_front는 enqueue/dequeue에만 사용해야 할 듯?
@@ -143,9 +139,9 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     rcu_read_lock();
     for_each_online_cpu(cpu)
     {
-        cur_load = cpu_rq(cpu)->wrr->load;
-        printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, p->cpus_allowed));
-        if(lowest_load < cur_load && cpumask_test_cpu(cpu, p->cpus_allowed))
+        cur_load = (cpu_rq(cpu)->wrr).load;
+        printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, &p->cpus_allowed));
+        if(lowest_load < cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
         {
             printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
         }
@@ -189,10 +185,10 @@ static void set_curr_task_wrr(struct rq *rq)
 static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 {
     struct wrr_rq *wrr;
-    struct sched_wrr_entry *wrr_se = &curr->wrr_se;
+    struct sched_wrr_entity *wrr_se = &curr->wrr_se;
 
-    wrr_se->rem_time_slice -= WRR_TIME_SLICE_UNIT;
-    if (wrr_se->rem_slice < 0){
+    wrr_se->rem_time_slice -= 1;
+    if (wrr_se->rem_time_slice < 0){
         dequeue_task_wrr(rq, curr, 0);
         enqueue_task_wrr(rq, curr, 0);
     }
@@ -203,13 +199,13 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 */
 static void task_fork_wrr(struct task_struct *p)
 {
-    strut rq *rq = this_rq(); //? task_rq(p)
+    struct rq *rq = this_rq(); //? task_rq(p)
     struct rq_flags rf;
 
     rq_lock(rq, &rf);
 	
-    p->wrr_se->weight = p->parent->wrr_se->weight;
-    p->wrr_se->rem_time_slice = p->wrr_se->weight * WRR_TIME_SLICE_UNIT;// Q) do we need this? when does 'enqueue' happen?
+    (p->wrr_se).weight = (p->parent->wrr_se).weight;
+    (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;// Q) do we need this? when does 'enqueue' happen?
 
     rq_unlock(rq, &rf);
 }
@@ -223,13 +219,13 @@ static void switched_from_wrr(struct rq *rq, struct task_struct *p)
 {
     // TODO.. Q) dequeue가 있는데 필요한가?
     // rq->wrr->load -= p->wrr_se->weight; @J CHECK! if not careful might double-subtract
-    p->wrr_se->rem_time_slice = p->wrr_se->weight * WRR_TIME_SLICE_UNIT;
+    (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;
 }
 
 static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 {
     // TODO.. Q) enqueue가 있는데 필요한가?
-    p->wrr_se->rem_time_slice = p->wrr_se->weight * WRR_TIME_SLICE_UNIT;
+    (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;
 }
 
 /*
@@ -239,7 +235,7 @@ static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 */
 static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
 {
-    return ((task->wrr_se)->weight) * WRR_TIME_SLICE_UNIT;
+    return ((task->wrr_se).weight) * WRR_TIME_SLICE_UNIT;
 }
 
 static void update_curr_wrr(struct rq *rq)
@@ -304,12 +300,11 @@ __init void init_sched_wrr_class(void)
 	nohz.next_blocked = jiffies;
 	zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
 #endif
-#endif /* SMP */
-*/
+#endif // SMP */
 }
 
-void init_wrr_rq(struct wrr_rq *wrr_rq)
+void init_wrr_rq(struct wrr_rq *wrr)
 {
-	INIT_LIST_HEAD(wrr_rq -> front);
-	load = 0;
+	INIT_LIST_HEAD(&wrr->wrr_list);
+	wrr->load = 0;
 }
