@@ -62,6 +62,8 @@ int sysctl_sched_rt_runtime = 950000;
 
 unsigned long last_balance_jiffies = 0;
 
+raw_spinlock_t wrr_load_balance_lock;
+
 /*
  * __task_rq_lock - lock the rq @p resides on.
  */
@@ -2315,7 +2317,7 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	 * Revert to default priority/policy on fork if requested.
 	 */
 	if (unlikely(p->sched_reset_on_fork)) {
-		if (task_has_dl_policy(p) || task_has_rt_policy(p)) {
+		if (task_has_dl_policy(p) || task_has_rt_policy(p) || fair_policy(p->policy)) {
 			//p->policy = SCHED_NORMAL;
 			p-> policy = SCHED_WRR; // any problem?
 			p->static_prio = NICE_TO_PRIO(0);
@@ -3070,6 +3072,13 @@ void scheduler_tick(void)
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
 	//TODO: Implement load_balance
+	raw_spin_lock_irq(&rq->lock);
+	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
+	{
+		last_balance_jiffies = jiffies;
+	}
+	load_balance_wrr();
+	raw_spin_unlock_irq(&rq->lock);
 #endif
 }
 
@@ -4148,7 +4157,7 @@ recheck:
 	} else {
 		reset_on_fork = !!(attr->sched_flags & SCHED_FLAG_RESET_ON_FORK);
 
-		if (!valid_policy(policy))
+		if (!valid_policy(policy) && policy != SCHED_WRR)
 			return -EINVAL;
 	}
 
@@ -5994,6 +6003,7 @@ void __init sched_init(void)
 	autogroup_init(&init_task);
 #endif /* CONFIG_CGROUP_SCHED */
 
+	raw_spin_lock_init(wrr_load_balance_lock);
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 

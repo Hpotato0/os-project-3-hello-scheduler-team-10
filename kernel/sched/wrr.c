@@ -148,10 +148,6 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     return lowest_load_cpu;
 }
 
-static void migrate_task_rq_wrr(struct task_struct *p, int new_cpu)
-{
-    // TODO: Fill me
-}
 
 static void rq_online_wrr(struct rq *rq)
 {
@@ -242,7 +238,7 @@ const struct sched_class wrr_sched_class = {
 
 #ifdef CONFIG_SMP
 	.select_task_rq		= select_task_rq_wrr,// O: 가장 한가한 
-	.migrate_task_rq	= migrate_task_rq_wrr, // O: load bal에서 사용
+	//.migrate_task_rq	= migrate_task_rq_wrr, // X: 거추장스러운건 떼버려!
 
 	.rq_online		= rq_online_wrr,// X: 이해불가
 	.rq_offline		= rq_offline_wrr, // X: 이해불가
@@ -289,4 +285,9 @@ void init_wrr_rq(struct wrr_rq *wrr_rq)
 {
 	INIT_LIST_HEAD(wrr_rq -> front);
 	load = 0;
+}
+
+void load_balance_wrr()
+{
+
 }
