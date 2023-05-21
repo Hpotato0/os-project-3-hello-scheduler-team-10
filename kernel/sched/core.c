@@ -2152,7 +2152,7 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 
-	INIT_LIST_HEAD(&p->wrr_se.run_list);
+	INIT_LIST_HEAD(&p->wrr_se.list_node);
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	p->se.cfs_rq			= NULL;
@@ -3323,7 +3323,7 @@ static inline void schedule_debug(struct task_struct *prev)
  */
 static inline struct task_struct *
 pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
-{
+{ // @J TODO: fix this
 	const struct sched_class *class;
 	struct task_struct *p;
 
