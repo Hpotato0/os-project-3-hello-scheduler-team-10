@@ -132,7 +132,27 @@ static void put_prev_task_wrr(struct rq *rq, struct task_struct *prev)
 
 static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, int wake_flags)
 {
-    // TODO: Fill me
+    int cpu;
+    int lowest_load = 999999;
+    int lowest_load_cpu;
+    int cur_load;
+    lowest_load_cpu = task_cpu(p);
+    if(sd_flag == SD_BALANCE_WAKE || sd_flag == SD_BALANCE_EXEC)
+        return prev_cpu;
+    printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
+    rcu_read_lock();
+    for_each_online_cpu(cpu)
+    {
+        cur_load = cpu_rq(cpu)->wrr->load;
+        printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, p->cpus_allowed));
+        if(lowest_load < cur_load && cpumask_test_cpu(cpu, p->cpus_allowed))
+        {
+            printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
+        }
+    }
+    rcu_read_unlock();
+    printk(KERN_ALERT "************* select_task_rq_wrr end ************\n");
+    return lowest_load_cpu;
 }
 
 static void migrate_task_rq_wrr(struct task_struct *p, int new_cpu)
