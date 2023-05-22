@@ -134,8 +134,12 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     int lowest_load_cpu;
     int cur_load;
     lowest_load_cpu = task_cpu(p);
+    preempt_disable();
     if(sd_flag == SD_BALANCE_WAKE || sd_flag == SD_BALANCE_EXEC)
+    {
         return prev_cpu;
+        preempt_enable();
+    }
     printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
     rcu_read_lock();
     for_each_online_cpu(cpu)
@@ -149,6 +153,7 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     }
     rcu_read_unlock();
     printk(KERN_ALERT "************* select_task_rq_wrr end ************\n");
+    preempt_enable();
     return lowest_load_cpu;
 }
 
@@ -310,5 +315,161 @@ void init_wrr_rq(struct wrr_rq *wrr)
 
 void load_balance_wrr()
 {
+    struct rq *src_rq, *dst_rq;
+    struct task_struct *migrate_task = (struct task_struct *)(NULL);
+    struct task_struct *cur_task = (struct task_struct *)(NULL);
+    struct sched_wrr_entity *cur_wrr_entity;
+    int min_cpu, max_cpu;
+    unsigned int max_load = 0;
+    unsigned int min_load = 999999;
+    unsigned int cur_load  = 0;
+    int cpu = 0;
+    
+    preempt_disable();
+    rcu_read_lock();
+    printk(KERN_ALERT "Finding min & max cpus\n");
+    for_each_online_cpu(cpu)
+    {
+        cur_load = (cpu_rq(cpu)->wrr).load;
+        printk(KERN_ALERT "cpu %d load: %u,", cpu, cur_load);
+        if(cur_load > max_load)
+        {
+            printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
+            max_load = cur_load;
+            max_cpu = cpu;
+        }
+        if(cur_load < min_load)
+        {
+            printk(KERN_ALERT "min CPU changed to %d with load %u\n", cpu, cur_load);
+            min_load = cur_load;
+            min_cpu = cpu;
+        }
+    }
+    rcu_read_unlock();
+    printk(KERN_ALERT "min_cpu: %d, min_load: %u, max_cpu: %d, max_load: %u\n", min_cpu, min_load, max_cpu, max_load);
 
+    src_rq = cpu_rq(max_cpu);
+    dst_rq = cpu_rq(min_cpu);
+
+    double_rq_lock(src_rq, dst_rq);
+    list_for_each_entry(cur_wrr_entity, &((src_rq->wrr).wrr_list), list_node)
+    {
+        if(cur_wrr_entity){
+            cur_task = wrr_task_of(cur_wrr_entity);
+            raw_spin_lock(&cur_task->pi_lock);
+            printk(KERN_ALERT "task weight: %d, is allowed?: %d\n", cur_wrr_entity->weight, cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed));
+            if(((src_rq->wrr).load - (dst_rq->wrr).load > ((cur_wrr_entity->weight)*2)) && cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed))
+            {
+                printk(KERN_ALERT "select this task for load balancing!\n");
+                migrate_task = cur_task;
+                break;
+            }
+            raw_spin_unlock(&cur_task->pi_lock);
+        } 
+    }
+    if(migrate_task)
+    {   
+        deactivate_task(src_rq, migrate_task, 0);
+		set_task_cpu(migrate_task, min_cpu);
+		activate_task(dst_rq, migrate_task, 0);
+        printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
+                  "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
+                  "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
+                  "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
+		  (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
+          migrate_task->comm, migrate_task->wrr_se->weight);
+        raw_spin_unlock(&migrate_task->pi_lock);
+    }
+    else
+    {
+        printk(KERN_ALERT "Cannot move any task!\n");
+    }
+    double_rq_unlock(src_rq, dst_rq);
+    preempt_enable();
 }
+
+
+/*
+reference from core.c
+	 * The caller should hold either p->pi_lock or rq->lock, when changing
+	 * a task's CPU. ->pi_lock for waking tasks, rq->lock for runnable tasks.
+	 *
+	 * sched_move_task() holds both and thus holding either pins the cgroup,
+	 * see task_group().
+	 *
+	 * Furthermore, all task_rq users should acquire both locks, see
+	 * task_rq_lock().
+	 */
+/*
+static int migrate_swap_stop(void *data)
+{
+	struct migration_swap_arg *arg = data;
+	struct rq *src_rq, *dst_rq;
+	int ret = -EAGAIN;
+
+	if (!cpu_active(arg->src_cpu) || !cpu_active(arg->dst_cpu))
+		return -EAGAIN;
+
+	src_rq = cpu_rq(arg->src_cpu);
+	dst_rq = cpu_rq(arg->dst_cpu);
+
+	double_raw_lock(&arg->src_task->pi_lock,
+			&arg->dst_task->pi_lock);
+	double_rq_lock(src_rq, dst_rq);
+
+	if (task_cpu(arg->dst_task) != arg->dst_cpu)
+		goto unlock;
+
+	if (task_cpu(arg->src_task) != arg->src_cpu)
+		goto unlock;
+
+	if (!cpumask_test_cpu(arg->dst_cpu, &arg->src_task->cpus_allowed))
+		goto unlock;
+
+	if (!cpumask_test_cpu(arg->src_cpu, &arg->dst_task->cpus_allowed))
+		goto unlock;
+
+	__migrate_swap_task(arg->src_task, arg->dst_cpu);
+	__migrate_swap_task(arg->dst_task, arg->src_cpu);
+
+	ret = 0;
+
+unlock:
+	double_rq_unlock(src_rq, dst_rq);
+	raw_spin_unlock(&arg->dst_task->pi_lock);
+	raw_spin_unlock(&arg->src_task->pi_lock);
+
+	return ret;
+}
+static void __migrate_swap_task(struct task_struct *p, int cpu)
+{
+	if (task_on_rq_queued(p)) {
+		struct rq *src_rq, *dst_rq;
+		struct rq_flags srf, drf;
+
+		src_rq = task_rq(p);
+		dst_rq = cpu_rq(cpu);
+
+		rq_pin_lock(src_rq, &srf);
+		rq_pin_lock(dst_rq, &drf);
+
+		p->on_rq = TASK_ON_RQ_MIGRATING;
+		deactivate_task(src_rq, p, 0);
+		set_task_cpu(p, cpu);
+		activate_task(dst_rq, p, 0);
+		p->on_rq = TASK_ON_RQ_QUEUED;
+		check_preempt_curr(dst_rq, p, 0);
+
+		rq_unpin_lock(dst_rq, &drf);
+		rq_unpin_lock(src_rq, &srf);
+
+	} else {
+		/*
+		 * Task isn't running anymore; make it appear like we migrated
+		 * it before it went to sleep. This means on wakeup we make the
+		 * previous CPU our target instead of where it really is.
+		 
+		p->wake_cpu = cpu;
+	}
+}
+*/

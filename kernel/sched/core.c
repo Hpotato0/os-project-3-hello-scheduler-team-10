@@ -3072,13 +3072,13 @@ void scheduler_tick(void)
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
 	//TODO: Implement load_balance
-	raw_spin_lock_irq(&rq->lock);
+	raw_spin_lock_irq(&wrr_load_balance_lock);
 	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
 	{
 		last_balance_jiffies = jiffies;
 	}
 	load_balance_wrr();
-	raw_spin_unlock_irq(&rq->lock);
+	raw_spin_unlock_irq(&wrr_load_balance_lock);
 #endif
 }
 
@@ -6003,7 +6003,7 @@ void __init sched_init(void)
 	autogroup_init(&init_task);
 #endif /* CONFIG_CGROUP_SCHED */
 
-	raw_spin_lock_init(wrr_load_balance_lock);
+	raw_spin_lock_init(&wrr_load_balance_lock);
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 
