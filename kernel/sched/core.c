@@ -2318,17 +2318,15 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	 */
 	if (unlikely(p->sched_reset_on_fork)) {
 		if (task_has_dl_policy(p) || task_has_rt_policy(p) || fair_policy(p->policy)) {
-			p->policy = SCHED_NORMAL;
-			//p-> policy = SCHED_WRR; 
+			//p->policy = SCHED_NORMAL;
+			p-> policy = SCHED_WRR; 
 			p->static_prio = NICE_TO_PRIO(0);
 			p->rt_priority = 0;
 			p->wrr_se.weight = 10;
 			p->wrr_se.rem_time_slice = 100;
 		} 
-		/* Don't need CFS anymore
 		else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
-		*/
 
 		p->prio = p->normal_prio = __normal_prio(p);
 		set_load_weight(p, false);
@@ -2344,10 +2342,8 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 		return -EAGAIN;
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
-	else if (p->policy == SCHED_WRR)
-		p->sched_class = &wrr_sched_class;
 	else
-		p->sched_class = &fair_sched_class;
+		p->sched_class = &wrr_sched_class;
 
 	init_entity_runnable_average(&p->se);
 
