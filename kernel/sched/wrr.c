@@ -319,7 +319,8 @@ void load_balance_wrr()
     struct task_struct *migrate_task = (struct task_struct *)(NULL);
     struct task_struct *cur_task = (struct task_struct *)(NULL);
     struct sched_wrr_entity *cur_wrr_entity;
-    int min_cpu, max_cpu;
+    int min_cpu = 0;
+    int max_cpu = 0;
     unsigned int max_load = 0;
     unsigned int min_load = 999999;
     unsigned int cur_load  = 0;
@@ -377,7 +378,7 @@ void load_balance_wrr()
                   "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
                   "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
 		  (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
-          migrate_task->comm, migrate_task->wrr_se->weight);
+          migrate_task->comm, migrate_task->wrr_se.weight);
         raw_spin_unlock(&migrate_task->pi_lock);
     }
     else
@@ -399,7 +400,8 @@ reference from core.c
 	 *
 	 * Furthermore, all task_rq users should acquire both locks, see
 	 * task_rq_lock().
-	 */
+*/
+
 /*
 static int migrate_swap_stop(void *data)
 {
@@ -464,7 +466,7 @@ static void __migrate_swap_task(struct task_struct *p, int cpu)
 		rq_unpin_lock(src_rq, &srf);
 
 	} else {
-		/*
+		
 		 * Task isn't running anymore; make it appear like we migrated
 		 * it before it went to sleep. This means on wakeup we make the
 		 * previous CPU our target instead of where it really is.
