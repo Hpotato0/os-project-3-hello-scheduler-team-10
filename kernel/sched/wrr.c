@@ -137,8 +137,8 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     preempt_disable();
     if(sd_flag == SD_BALANCE_WAKE || sd_flag == SD_BALANCE_EXEC)
     {
-        return prev_cpu;
         preempt_enable();
+        return prev_cpu;
     }
     printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
     rcu_read_lock();
