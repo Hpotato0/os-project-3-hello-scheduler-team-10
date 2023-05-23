@@ -3074,8 +3074,8 @@ void scheduler_tick(void)
 	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
 	{
 		last_balance_jiffies = jiffies;
+		load_balance_wrr();
 	}
-	load_balance_wrr();
 	raw_spin_unlock_irq(&wrr_load_balance_lock);
 #endif
 }
