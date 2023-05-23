@@ -2318,8 +2318,8 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	 */
 	if (unlikely(p->sched_reset_on_fork)) {
 		if (task_has_dl_policy(p) || task_has_rt_policy(p) || fair_policy(p->policy)) {
-			//p->policy = SCHED_NORMAL;
-			p-> policy = SCHED_WRR; // any problem?
+			p->policy = SCHED_NORMAL;
+			//p-> policy = SCHED_WRR; 
 			p->static_prio = NICE_TO_PRIO(0);
 			p->rt_priority = 0;
 			p->wrr_se.weight = 10;
@@ -2344,8 +2344,10 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 		return -EAGAIN;
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
-	else
+	else if (p->policy == SCHED_WRR)
 		p->sched_class = &wrr_sched_class;
+	else
+		p->sched_class = &fair_sched_class;
 
 	init_entity_runnable_average(&p->se);
 
@@ -4113,8 +4115,10 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
 		p->sched_class = &dl_sched_class;
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
-	else
+	else if(p->policy == SCHED_WRR)
 		p->sched_class = &wrr_sched_class;
+	else
+		p->sched_class = &fair_sched_class;
 }
 
 /*
