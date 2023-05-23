@@ -112,14 +112,11 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 
 static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
-    // method(1): use prev
-    struct sched_wrr_entity* wrr_se = &prev->wrr_se;
-    if(list_empty(&(wrr_se->list_node)))
+    // front of the queue
+    struct wrr_rq* wrr = &rq->wrr;
+    if(list_empty(&wrr->wrr_list))
         return NULL;
-    return wrr_task_of(list_entry((wrr_se->list_node).next, struct sched_wrr_entity, list_node));
-
-    // method(2): take the front of the queue
-    // TODO.. 실행되면 queue에서 빠지나? 아님. 엥 그러면 그냥 prev 쓰고 queue_front는 enqueue/dequeue에만 사용해야 할 듯?
+    return wrr_task_of(list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node));
 }
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *prev)
@@ -319,7 +316,8 @@ void load_balance_wrr()
     struct task_struct *migrate_task = (struct task_struct *)(NULL);
     struct task_struct *cur_task = (struct task_struct *)(NULL);
     struct sched_wrr_entity *cur_wrr_entity;
-    int min_cpu, max_cpu;
+    int min_cpu = 0;
+    int max_cpu = 0;
     unsigned int max_load = 0;
     unsigned int min_load = 999999;
     unsigned int cur_load  = 0;
@@ -377,7 +375,7 @@ void load_balance_wrr()
                   "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
                   "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
 		  (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
-          migrate_task->comm, migrate_task->wrr_se->weight);
+          migrate_task->comm, migrate_task->wrr_se.weight);
         raw_spin_unlock(&migrate_task->pi_lock);
     }
     else
@@ -399,7 +397,8 @@ reference from core.c
 	 *
 	 * Furthermore, all task_rq users should acquire both locks, see
 	 * task_rq_lock().
-	 */
+*/
+
 /*
 static int migrate_swap_stop(void *data)
 {
@@ -464,7 +463,7 @@ static void __migrate_swap_task(struct task_struct *p, int cpu)
 		rq_unpin_lock(src_rq, &srf);
 
 	} else {
-		/*
+		
 		 * Task isn't running anymore; make it appear like we migrated
 		 * it before it went to sleep. This means on wakeup we make the
 		 * previous CPU our target instead of where it really is.
