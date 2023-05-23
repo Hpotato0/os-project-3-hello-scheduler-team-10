@@ -114,7 +114,7 @@ static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct
 {
     // front of the queue
     struct wrr_rq* wrr = &rq->wrr;
-    if(list_empty(&wrr->wrr_list)
+    if(list_empty(&wrr->wrr_list))
         return NULL;
     return wrr_task_of(list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node));
 }
