@@ -112,14 +112,11 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 
 static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
-    // method(1): use prev
-    struct sched_wrr_entity* wrr_se = &prev->wrr_se;
-    if(list_empty(&(wrr_se->list_node)))
+    // front of the queue
+    struct wrr_rq* wrr = &rq->wrr;
+    if(list_empty(&wrr->wrr_list)
         return NULL;
-    return wrr_task_of(list_entry((wrr_se->list_node).next, struct sched_wrr_entity, list_node));
-
-    // method(2): take the front of the queue
-    // TODO.. 실행되면 queue에서 빠지나? 아님. 엥 그러면 그냥 prev 쓰고 queue_front는 enqueue/dequeue에만 사용해야 할 듯?
+    return wrr_task_of(list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node));
 }
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *prev)
