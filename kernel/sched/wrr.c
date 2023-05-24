@@ -146,6 +146,8 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
         if(lowest_load > cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
         {
             printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
+            lowest_load = cur_load;
+            lowest_load_cpu = cpu;
         }
     }
     rcu_read_unlock();
