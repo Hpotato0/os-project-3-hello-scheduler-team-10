@@ -137,21 +137,21 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
         preempt_enable();
         return prev_cpu;
     }
-    printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
+    //printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
     rcu_read_lock();
     for_each_online_cpu(cpu)
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
-        printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, &p->cpus_allowed));
+        //printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, &p->cpus_allowed));
         if(lowest_load > cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
         {
-            printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
+            //printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
             lowest_load = cur_load;
             lowest_load_cpu = cpu;
         }
     }
     rcu_read_unlock();
-    printk(KERN_ALERT "************* select_task_rq_wrr end ************\n");
+    //printk(KERN_ALERT "************* select_task_rq_wrr end ************\n");
     preempt_enable();
     return lowest_load_cpu;
 }
@@ -358,7 +358,7 @@ void load_balance_wrr()
             cur_task = wrr_task_of(cur_wrr_entity);
             raw_spin_lock(&cur_task->pi_lock);
             printk(KERN_ALERT "task weight: %d, is allowed?: %d\n", cur_wrr_entity->weight, cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed));
-            if(((src_rq->wrr).load - (dst_rq->wrr).load > ((cur_wrr_entity->weight)*2)) && cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed))
+            if(((src_rq->wrr).load - (dst_rq->wrr).load > ((cur_wrr_entity->weight)*2)) && cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed) && src_rq->curr != cur_task)
             {
                 printk(KERN_ALERT "select this task for load balancing!\n");
                 migrate_task = cur_task;

@@ -3069,7 +3069,7 @@ void scheduler_tick(void)
 #ifdef CONFIG_SMP
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
-	//TODO: Implement load_balance
+	/*
 	raw_spin_lock_irq(&wrr_load_balance_lock);
 	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
 	{
@@ -3077,6 +3077,7 @@ void scheduler_tick(void)
 		load_balance_wrr();
 	}
 	raw_spin_unlock_irq(&wrr_load_balance_lock);
+	*/
 #endif
 }
 
