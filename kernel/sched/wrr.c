@@ -143,7 +143,7 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
         printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, &p->cpus_allowed));
-        if(lowest_load < cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
+        if(lowest_load > cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
         {
             printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
         }
