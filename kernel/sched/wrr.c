@@ -63,7 +63,7 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
     
     list_add_tail(&wrr_se->list_node, & wrr_rq->wrr_list);
 
-    resched_curr(rq);
+    // resched_curr(rq);
     // update wrr_rq total load
     wrr_rq->load += wrr_se->weight;
     wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
@@ -87,10 +87,9 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
     // debug
     struct task_struct *debug = wrr_task_of(wrr_se); 
     printk("[%s] CPU: %d pid: %d\n" , __func__, cpu_of(rq), debug->pid);
-    
     list_del_init(&wrr_se->list_node);
 
-    resched_curr(rq);
+    // resched_curr(rq);
     // update wrr_rq total load
     wrr_rq->load -= wrr_se->weight;
     wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
@@ -141,9 +140,9 @@ static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct
     // front of the queue
     struct wrr_rq* wrr = &rq->wrr;
     // debug
+    // struct sched_wrr_entity *wrr_se = list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node);
     struct task_struct *curr = wrr_task_of(list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node));
     printk("[%s] CPU: %d prev_pid: %d curr_pid: %d" , __func__, cpu_of(rq), prev->pid, curr->pid);
-
     if(list_empty(&wrr->wrr_list))
         return NULL;
     return curr;
@@ -202,7 +201,9 @@ static void rq_offline_wrr(struct rq *rq)
 
 static void task_dead_wrr(struct task_struct *p)
 {
-    printk("[%s] \n" , __func__);
+    struct rq *rq = task_rq(p);
+    struct sched_wrr_entity *wrr_se = &p->wrr_se;
+    printk("[%s] CPU: %d pid: %d remain time: %d\n" ,__func__, cpu_of(rq), p->pid, wrr_se->rem_time_slice );   
     // do not need
 }
 
@@ -223,12 +224,12 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
     // struct wrr_rq *wrr;
     struct sched_wrr_entity *wrr_se = &curr->wrr_se;
     printk("[%s] CPU: %d curr_pid: %d remain time: %d" , __func__, cpu_of(rq), curr->pid, wrr_se->rem_time_slice);
-    // dump_stack();
-    wrr_se->rem_time_slice -= 1;
+    wrr_se->rem_time_slice--;
     if (wrr_se->rem_time_slice < 0){
         printk("[Need deque, enque]");
         dequeue_task_wrr(rq, curr, 0);
         enqueue_task_wrr(rq, curr, 0);
+        resched_curr(rq);
     }
 }
 
@@ -246,8 +247,7 @@ static void task_fork_wrr(struct task_struct *p)
     rq_lock(rq, &rf);
 	
     // debug
-    // (p->wrr_se).weight = (p->parent->wrr_se).weight;
-    (p->wrr_se).weight = 1;
+    (p->wrr_se).weight = (p->parent->wrr_se).weight;
     (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;// Q) do we need this? when does 'enqueue' happen?
 
     rq_unlock(rq, &rf);
@@ -374,26 +374,26 @@ void load_balance_wrr()
     printk("[%s]", __func__);
     preempt_disable();
     rcu_read_lock();
-    // printk(KERN_ALERT "Finding min & max cpus\n");
+    printk(KERN_ALERT "Finding min & max cpus\n");
     for_each_online_cpu(cpu)
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
         printk(KERN_ALERT "cpu %d load: %u,", cpu, cur_load);
         if(cur_load > max_load)
         {
-            // printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
+            printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
             max_load = cur_load;
             max_cpu = cpu;
         }
         if(cur_load < min_load)
         {
-            // printk(KERN_ALERT "min CPU changed to %d with load %u\n", cpu, cur_load);
+            printk(KERN_ALERT "min CPU changed to %d with load %u\n", cpu, cur_load);
             min_load = cur_load;
             min_cpu = cpu;
         }
     }
     rcu_read_unlock();
-    // printk(KERN_ALERT "min_cpu: %d, min_load: %u, max_cpu: %d, max_load: %u\n", min_cpu, min_load, max_cpu, max_load);
+    printk(KERN_ALERT "min_cpu: %d, min_load: %u, max_cpu: %d, max_load: %u\n", min_cpu, min_load, max_cpu, max_load);
 
     src_rq = cpu_rq(max_cpu);
     dst_rq = cpu_rq(min_cpu);
@@ -407,7 +407,7 @@ void load_balance_wrr()
             printk(KERN_ALERT "task weight: %d, is allowed?: %d\n", cur_wrr_entity->weight, cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed));
             if(((src_rq->wrr).load - (dst_rq->wrr).load > ((cur_wrr_entity->weight)*2)) && cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed) && src_rq->curr != cur_task)
             {
-                // printk(KERN_ALERT "select this task for load balancing!\n");
+                printk(KERN_ALERT "select this task for load balancing!\n");
                 migrate_task = cur_task;
                 break;
             }
@@ -419,17 +419,17 @@ void load_balance_wrr()
         deactivate_task(src_rq, migrate_task, 0);
 		set_task_cpu(migrate_task, min_cpu);
 		activate_task(dst_rq, migrate_task, 0);
-        // printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
-        //           "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
-        //           "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
-        //           "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
-		//   (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
-        //   migrate_task->comm, migrate_task->wrr_se.weight);
+        printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
+                  "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
+                  "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
+                  "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
+		  (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
+          migrate_task->comm, migrate_task->wrr_se.weight);
         raw_spin_unlock(&migrate_task->pi_lock);
     }
     else
     {
-        // printk(KERN_ALERT "Cannot move any task!\n");
+        printk(KERN_ALERT "Cannot move any task!\n");
     }
     double_rq_unlock(src_rq, dst_rq);
     preempt_enable();

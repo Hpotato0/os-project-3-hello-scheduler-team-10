@@ -459,7 +459,7 @@ void resched_curr(struct rq *rq)
 {
 	struct task_struct *curr = rq->curr;
 	int cpu;
-
+    printk("[%s] CPU: %d" , __func__, cpu_of(rq));
 	lockdep_assert_held(&rq->lock);
 
 	if (test_tsk_need_resched(curr))
@@ -3412,7 +3412,6 @@ static void __sched notrace __schedule(bool preempt)
     
 	// debug
 	printk("[%s]", __func__);
-	
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	prev = rq->curr;
@@ -3495,7 +3494,7 @@ static void __sched notrace __schedule(bool preempt)
 		trace_sched_switch(preempt, prev, next);
 
 		/* Also unlocks the rq: */
-		printk("[Context switch] ---- from %d to %d", prev->pid, next->pid);
+		printk("[Context switch] CPU: %d from %d to %d !!!!", cpu, prev->pid, next->pid);
 		rq = context_switch(rq, prev, next, &rf);
 	} else {
 		rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);

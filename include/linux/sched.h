@@ -446,7 +446,7 @@ struct sched_statistics {
 struct sched_wrr_entity {
 	struct list_head list_node;
 	int weight;
-	unsigned int rem_time_slice; // unit: ms
+	int rem_time_slice; // unit: ms
 	struct wrr_rq * wrr;
 };
 
