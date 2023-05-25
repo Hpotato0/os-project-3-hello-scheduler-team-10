@@ -459,7 +459,7 @@ void resched_curr(struct rq *rq)
 {
 	struct task_struct *curr = rq->curr;
 	int cpu;
-
+    printk("[%s] CPU: %d" , __func__, cpu_of(rq));
 	lockdep_assert_held(&rq->lock);
 
 	if (test_tsk_need_resched(curr))
@@ -2299,7 +2299,8 @@ static inline void init_schedstats(void) {}
 int sched_fork(unsigned long clone_flags, struct task_struct *p)
 {
 	unsigned long flags;
-
+	// debug
+	printk("[%s]", __func__);
 	__sched_fork(clone_flags, p);
 	/*
 	 * We mark the process as NEW here. This guarantees that
@@ -3078,7 +3079,6 @@ void scheduler_tick(void)
 		load_balance_wrr();
 	}
 	raw_spin_unlock_irq(&wrr_load_balance_lock);
-	
 #endif
 }
 
@@ -3273,7 +3273,8 @@ static noinline void __schedule_bug(struct task_struct *prev)
 {
 	/* Save this before calling printk(), since that will clobber it */
 	unsigned long preempt_disable_ip = get_preempt_disable_ip(current);
-
+	// debug
+	printk("[%s]", __func__);
 	if (oops_in_progress)
 		return;
 
@@ -3408,7 +3409,9 @@ static void __sched notrace __schedule(bool preempt)
 	struct rq_flags rf;
 	struct rq *rq;
 	int cpu;
-
+    
+	// debug
+	printk("[%s]", __func__);
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	prev = rq->curr;
@@ -3491,6 +3494,7 @@ static void __sched notrace __schedule(bool preempt)
 		trace_sched_switch(preempt, prev, next);
 
 		/* Also unlocks the rq: */
+		printk("[Context switch] CPU: %d from %d to %d !!!!", cpu, prev->pid, next->pid);
 		rq = context_switch(rq, prev, next, &rf);
 	} else {
 		rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);
