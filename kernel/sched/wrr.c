@@ -169,7 +169,6 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
         return prev_cpu;
     }
     //printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
-    //printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
     rcu_read_lock();
     for_each_online_cpu(cpu)
     {
@@ -368,9 +367,9 @@ void load_balance_wrr()
     struct sched_wrr_entity *cur_wrr_entity;
     int min_cpu = 0;
     int max_cpu = 0;
-    unsigned int max_load = 0;
-    unsigned int min_load = 999999;
-    unsigned int cur_load  = 0;
+    int max_load = 0;
+    int min_load = 999999;
+    int cur_load  = 0;
     int cpu = 0;
     printk("[%s]", __func__);
     preempt_disable();
@@ -379,7 +378,7 @@ void load_balance_wrr()
     for_each_online_cpu(cpu)
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
-        printk(KERN_ALERT "cpu %d load: %u,", cpu, cur_load);
+        printk(KERN_ALERT "cpu %d load: %d,", cpu, cur_load);
         if(cur_load > max_load)
         {
             printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
