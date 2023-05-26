@@ -3990,6 +3990,87 @@ SYSCALL_DEFINE1(nice, int, increment)
 #endif
 
 /**
+ * sched_setweight - sets a weight of a task
+ * if it's scheduled by WRR
+ */
+SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
+    task_struct* task;
+    int orig_weight;
+
+    printk("sched_setweight called!\n");
+
+    if(pid < 0 || weight < 1 || weight > 20){
+        printk("sched_setweight ERROR: invalid value!\n");
+        return -EINVAL;
+    }
+
+    task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+    
+    if(task == NULL){
+        printk("sched_setweight ERROR: no such task exists!\n");
+        return -ESRCH;
+    }
+
+    if(task->policy != SCHED_WRR){
+        printk("sched_setweight ERROR: task NOT under WRR policy!\n");
+        return -EINVAL;
+    }
+
+    orig_weight = (task->sched_wrr_entity).weight;
+
+    if(0){
+        // TODO
+        return -EPERM;
+    }
+
+    if(orig_weight > weight)
+        printk("sched_setweight decreasing weight!\n");
+    else
+        printk("sched_setweight increasing weight!\n"); //TODO: sometime illegal
+    
+    // FIXME: which lock goes here?
+    (task->sched_wrr_entity).weight = weight;
+    // do we even need a lock?
+    
+    return 0;
+}
+
+/**
+ * sched_getweight - if the task is scheduled by WRR,
+ * return the task's weight
+ */
+SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
+    task_struct* task;
+
+    printk("sched_getweight called!\n");
+
+    if(pid < 0){
+        printk("sched_getweight ERROR: invalid value!\n");
+        return -EINVAL;
+    }
+
+    task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+    
+    if(task == NULL){
+        printk("sched_setweight ERROR: no such task exists!\n");
+        return -ESRCH;
+    }
+
+    if(task->policy != SCHED_WRR){
+        printk("sched_setweight ERROR: task NOT under WRR policy!\n");
+        return -EINVAL;
+    }
+
+    if(0){
+        // SO NO EPERM error here?
+        return -EPERM;
+    }
+
+    // is lock needed?
+    return (task->sched_wrr_entity).weight;
+}
+
+/**
  * task_prio - return the priority value of a given task.
  * @p: the task in question.
  *
