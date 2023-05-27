@@ -29,7 +29,7 @@ void factorize(int num){
 
 int main(int argc, char *argv[])
 {
-    if(argc != 2){
+    if(argc != 3){
         printf("Usage: ./factorize [self_weight]\n");
         return 0;
     }
@@ -37,28 +37,25 @@ int main(int argc, char *argv[])
         printf("Argument should be a number\n");
         return 0;
     }
-
+    int loop_num = atoi(argv[2]);
     int weight = atoi(argv[1]);
     int result = syscall(SYS_SCHED_SETWEIGHT, getpid(), weight);
     int errnum = errno;
 
-    double time_spent = 0.0;
-    clock_t begin = clock();
-    
+    struct timespec begin, end;
+    clock_gettime(CLOCK_MONOTONIC, &begin);
     if(result < 0){
         printf("error returned from syscall sched_setweight: %s\n", strerror(errnum));
         return -1;
     }
 
-    int num = (int)getpid();
-    int loop_time = 100000000;
-    while(loop_time){
-        factorize(num);
-        loop_time--;
+    while(loop_num){
+        factorize(loop_num);
+        loop_num--;
     }
-    clock_t end = clock();
-    time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("The elasped time is %f seconds", time_spent);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double spent_time = (end.tv_sec - begin.tv_sec) + ((end.tv_nsec - begin.tv_nsec)/1000000000);
+    printf("\n\nThe elasped time is %.6f s \n", spent_time);
     return 0;
 }
 

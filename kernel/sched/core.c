@@ -3998,10 +3998,8 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
     struct task_struct* task;
     int orig_weight;
 
-    printk("sched_setweight called!\n");
 
     if(pid < 0 || weight < 1 || weight > 20){
-        printk("sched_setweight ERROR: invalid value!\n");
         return -EINVAL;
     }
 
@@ -4011,12 +4009,10 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
 		task = current;
     
     if(task == NULL){
-        printk("sched_setweight ERROR: no such task exists!\n");
         return -ESRCH;
     }
 
     if(task->policy != SCHED_WRR){
-        printk("sched_setweight ERROR: task NOT under WRR policy!\n");
         return -EINVAL;
     }
 
@@ -4029,7 +4025,6 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
 			raw_spin_unlock(&task->pi_lock);
 			return -EPERM;
 		}
-		printk("sched_setweight increasing weight!(root)\n"); 
 	}
 	else{
 		// only root or owner of the task can decrease its weight
@@ -4037,7 +4032,6 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
 			raw_spin_unlock(&task->pi_lock);
 			return -EPERM;
 		}
-		printk("sched_setweight decreasing weight!\n");
 	}
 
 	(task->wrr_se).weight = weight;
@@ -4062,10 +4056,8 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
     struct task_struct* task;
 	long w;
 
-    printk("sched_getweight called!\n");
 
     if(pid < 0){
-        printk("sched_getweight ERROR: invalid value!\n");
         return -EINVAL;
     }
 
@@ -4075,12 +4067,10 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
 		task = current;
     
     if(task == NULL){
-        printk("sched_setweight ERROR: no such task exists!\n");
         return -ESRCH;
     }
 
     if(task->policy != SCHED_WRR){
-        printk("sched_setweight ERROR: task NOT under WRR policy!\n");
         return -EINVAL;
     }
 
