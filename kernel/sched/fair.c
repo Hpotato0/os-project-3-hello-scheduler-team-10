@@ -5106,6 +5106,10 @@ static inline void hrtick_update(struct rq *rq)
 static void
 enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 {
+	// @@@debug
+	printk(KERN_EMERG "@@@@@@@@@@@@@@@@@@@@@@@\nWARNING! A TASK HAS BEEN ENQUEUED TO CFS\n@@@@@@@@@@@@@@@@@@@@@@@");
+
+
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se;
 
