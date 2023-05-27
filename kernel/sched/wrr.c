@@ -206,21 +206,12 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
     }
 }
 
-/*
-    Need to take a lock in task_fork_wrr
-*/
 static void task_fork_wrr(struct task_struct *p)
 {
-    struct rq *rq = this_rq(); //? task_rq(p)
-    struct rq_flags rf;
-
-    rq_lock(rq, &rf);
-	
-    // debug
+    rcu_read_lock(); // p->parent could be in another cpu, other locks not needed since p not enqueued yet
     (p->wrr_se).weight = (p->parent->wrr_se).weight;
-    (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;// Q) do we need this? when does 'enqueue' happen?
-
-    rq_unlock(rq, &rf);
+    (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;// for safety
+    rcu_read_unlock();
 }
 
 static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
