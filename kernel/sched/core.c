@@ -754,7 +754,7 @@ void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
 {
 	if (task_contributes_to_load(p))
 		rq->nr_uninterruptible++;
-	pr_debug("%s %d %d\n", __func__, cpu_of(rq), p->pid);
+	printk(KERN_DEBUG "%s %d %d\n", __func__, cpu_of(rq), p->pid);
 	dequeue_task(rq, p, flags);
 }
 
@@ -2796,7 +2796,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	       struct task_struct *next, struct rq_flags *rf)
 {
 	struct mm_struct *mm, *oldmm;
-	pr_debug("%s %d %d\n", __func__, cpu_of(task_rq(next)), next->pid);
+	printk(KERN_DEBUG"%s %d %d\n", __func__, cpu_of(task_rq(next)), next->pid);
 
 	prepare_task_switch(rq, prev, next);
 
@@ -3072,13 +3072,13 @@ void scheduler_tick(void)
 	//TODO: Implement load_balance
 	
 	
-	raw_spin_lock(&wrr_load_balance_lock);
-	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
-	{
-		last_balance_jiffies = jiffies;
-		load_balance_wrr();
-	}
-	raw_spin_unlock(&wrr_load_balance_lock);
+	// raw_spin_lock(&wrr_load_balance_lock);
+	// if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
+	// {
+	// 	last_balance_jiffies = jiffies;
+	// 	load_balance_wrr();
+	// }
+	// raw_spin_unlock(&wrr_load_balance_lock);
 	
 #endif
 }
