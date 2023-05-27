@@ -163,11 +163,13 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     int cur_load;
     lowest_load_cpu = task_cpu(p);
     preempt_disable();
+    /*
     if(sd_flag == SD_BALANCE_WAKE || sd_flag == SD_BALANCE_EXEC)
     {
         preempt_enable();
         return prev_cpu;
     }
+    */
     //printk(KERN_ALERT "************* select_task_rq_wrr start ************\n");
     rcu_read_lock();
     for_each_online_cpu(cpu)
