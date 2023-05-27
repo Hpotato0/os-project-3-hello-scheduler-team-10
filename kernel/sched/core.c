@@ -4042,6 +4042,7 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
  */
 SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
     struct task_struct* task;
+	long w;
 
     printk("sched_getweight called!\n");
 
@@ -4069,8 +4070,9 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
 
     // is lock needed?
 	rcu_read_lock();
-	int w = (task->wrr_se).weight;
-	rcu_read_unlock()
+	w = (task->wrr_se).weight;
+	rcu_read_unlock();
+	
     return w;
 }
 
