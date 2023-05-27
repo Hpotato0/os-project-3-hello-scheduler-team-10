@@ -1,0 +1,21 @@
+#!/bin/bash
+./factorizeLoop_hide 1 &
+./factorizeLoop_hide 2 &
+./factorizeLoop_hide 3 &
+./factorizeLoop_hide 4 &
+./factorizeLoop_hide 5 &
+./factorizeLoop_hide 6 &
+./factorizeLoop_hide 7 &
+./factorizeLoop_hide 8 &
+./factorizeLoop_hide 9 &
+./factorizeLoop_hide 10 &
+./factorizeLoop_hide 11 &
+./factorizeLoop_hide 12 &
+./factorizeLoop_hide 13 &
+./factorizeLoop_hide 14 &
+./factorizeLoop_hide 15 &
+./factorizeLoop_hide 16 &
+./factorizeLoop_hide 17 &
+./factorizeLoop_hide 18 &
+./factorizeLoop_hide 19 &
+./factorizeLoop_hide 20 &
