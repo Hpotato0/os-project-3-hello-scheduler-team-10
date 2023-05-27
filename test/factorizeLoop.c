@@ -8,9 +8,11 @@
 #include <ctype.h> // isdigit
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 # define SYS_SCHED_SETWEIGHT 294
 # define SYS_SCHED_GETWEIGHT 295
+
 
 void factorize(int num){
     // printf("Factorizing %d: ", num);
@@ -40,16 +42,23 @@ int main(int argc, char *argv[])
     int result = syscall(SYS_SCHED_SETWEIGHT, getpid(), weight);
     int errnum = errno;
 
+    double time_spent = 0.0;
+    clock_t begin = clock();
+    
     if(result < 0){
         printf("error returned from syscall sched_setweight: %s\n", strerror(errnum));
         return -1;
     }
 
     int num = (int)getpid();
-    while(1){
+    int loop_time = 100000000;
+    while(loop_time){
         factorize(num);
+        loop_time--;
     }
-
+    clock_t end = clock();
+    time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+    printf("The elasped time is %f seconds", time_spent);
     return 0;
 }
 
