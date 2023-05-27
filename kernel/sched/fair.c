@@ -5111,9 +5111,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	struct cfs_rq *cfs_rq;
 	struct sched_entity *se = &p->se;
 
-	// @@@debug
-	printk(KERN_EMERG "@@@@@@@@@@@@@@@@@@@@@@@\nWARNING! A TASK HAS BEEN ENQUEUED TO CFS\n@@@@@@@@@@@@@@@@@@@@@@@");
-
 	/*
 	 * The code below (indirectly) updates schedutil which looks at
 	 * the cfs_rq utilization to select a frequency.
