@@ -4014,22 +4014,29 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         return -EINVAL;
     }
 
-    orig_weight = (task->wrr_se).weight;
-
     if(0){
         // TODO
         return -EPERM;
     }
+    
+    // FIXME: which lock goes here?
 
-    if(orig_weight > weight)
+	raw_spin_lock_irq(&task->pi_lock);
+	orig_weight = (task->wrr_se).weight;
+	if(orig_weight > weight)
         printk("sched_setweight decreasing weight!\n");
     else
         printk("sched_setweight increasing weight!\n"); //TODO: sometime illegal
-    
-    // FIXME: which lock goes here?
-	rcu_read_lock();
     (task->wrr_se).weight = weight;
-	rcu_read_unlock();
+
+	if(task_on_rq_queued(task))
+	{
+		raw_spin_lock(&task_rq(task)->lock);
+		task_rq(task)->wrr.load -= orig_weight;
+		task_rq(task)->wrr.load += weight;
+		raw_spin_unlock(&task_rq(task)->lock);
+	}
+	raw_spin_unlock_irq(&task->pi_lock);
     
     return 0;
 }

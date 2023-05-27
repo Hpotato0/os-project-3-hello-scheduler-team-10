@@ -366,7 +366,7 @@ void load_balance_wrr()
     src_rq = cpu_rq(max_cpu);
     dst_rq = cpu_rq(min_cpu);
 
-    double_rq_lock(src_rq, dst_rq);
+    
     list_for_each_entry_safe(cur_wrr_entity, temp_wrr_entity, &((src_rq->wrr).wrr_list), list_node)
     {
         if(cur_wrr_entity){
@@ -384,6 +384,7 @@ void load_balance_wrr()
     }
     if(migrate_task)
     {   
+        double_rq_lock(src_rq, dst_rq);
         deactivate_task(src_rq, migrate_task, 0);
 		set_task_cpu(migrate_task, min_cpu);
 		activate_task(dst_rq, migrate_task, 0);
@@ -393,13 +394,9 @@ void load_balance_wrr()
                 "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
         (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
         migrate_task->comm, migrate_task->wrr_se.weight);
+        double_rq_unlock(src_rq, dst_rq);
         raw_spin_unlock(&migrate_task->pi_lock);
     }
-    else
-    {
-        // printk(KERN_ALERT "Cannot move any task!\n");
-    }
-    double_rq_unlock(src_rq, dst_rq);
 balance_end:
     preempt_enable();
 }
