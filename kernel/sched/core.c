@@ -3071,7 +3071,7 @@ void scheduler_tick(void)
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
 
-	/*
+	
 	raw_spin_lock(&wrr_load_balance_lock);
 	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
 	{
@@ -3079,7 +3079,7 @@ void scheduler_tick(void)
 		load_balance_wrr();
 	}
 	raw_spin_unlock(&wrr_load_balance_lock);
-	*/
+	
 	
 #endif
 }
