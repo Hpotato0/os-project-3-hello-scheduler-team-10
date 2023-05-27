@@ -10,24 +10,30 @@ The kernel build, test code compilation & running procedure did not change from 
 # trial.c -> trial
 /project-3-hello-scheduler-team-10/test$ make NAME=trial
 ```
-
 ## How to test 
 kernel build and run qmeu
 ```bash
 ~/sudo ./_build.sh
-./sudo setup-images.sh
-./mkdir mntdir
-./sudo moount tizen-image/rootfs.img  mntdir
-./sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
-./_run.sh
-// in virtual machine
-./setup.sh
-./log.sh "test weight"
+~/./sudo setup-images.sh
+~/./mkdir mntdir
+~/./sudo moount tizen-image/rootfs.img  mntdir
+~/./sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
+~/./_run.sh
 ```
 ### WRR schedling test
+```bash
+root/./setup.sh
+root/./log.sh test_weight // test_weight will be the weight of the your performance test process
+```
 ### Load balancing test
+```base
+root/./printWRRRloads
+root/./setup.sh
+root/./log.sh
+```
 ### Error check
-
+```bash
+```
 ## 1. Implementation Overview
 WRR(Weighted Round Robin)
 
@@ -94,7 +100,8 @@ const struct sched_class wrr_sched_class = {
 	.get_rr_interval	= get_rr_interval_wrr,
 };
 ```
+## 4. Performance test
 
-## 4. Lessons Learned
+## 5. Lessons Learned
 * `printk`s with interrupt disabling can cause deadlocks!
 * stack traces are invaluable 
