@@ -384,12 +384,12 @@ void load_balance_wrr()
         deactivate_task(src_rq, migrate_task, 0);
 		set_task_cpu(migrate_task, min_cpu);
 		activate_task(dst_rq, migrate_task, 0);
-        // printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
-        //           "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
-        //           "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
-        //           "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
-		//   (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
-        //   migrate_task->comm, migrate_task->wrr_se.weight);
+        printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
+                "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
+                "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
+                "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
+        (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
+        migrate_task->comm, migrate_task->wrr_se.weight);
         raw_spin_unlock(&migrate_task->pi_lock);
     }
     else

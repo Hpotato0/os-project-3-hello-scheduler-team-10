@@ -3994,7 +3994,7 @@ SYSCALL_DEFINE1(nice, int, increment)
  * if it's scheduled by WRR
  */
 SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
-    task_struct* task;
+    struct task_struct* task;
     int orig_weight;
 
     printk("sched_setweight called!\n");
@@ -4016,7 +4016,7 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         return -EINVAL;
     }
 
-    orig_weight = (task->sched_wrr_entity).weight;
+    orig_weight = (task->wrr_se).weight;
 
     if(0){
         // TODO
@@ -4029,7 +4029,7 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         printk("sched_setweight increasing weight!\n"); //TODO: sometime illegal
     
     // FIXME: which lock goes here?
-    (task->sched_wrr_entity).weight = weight;
+    (task->wrr_se).weight = weight;
     // do we even need a lock?
     
     return 0;
@@ -4040,7 +4040,7 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
  * return the task's weight
  */
 SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
-    task_struct* task;
+    struct task_struct* task;
 
     printk("sched_getweight called!\n");
 
@@ -4067,7 +4067,7 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
     }
 
     // is lock needed?
-    return (task->sched_wrr_entity).weight;
+    return (task->wrr_se).weight;
 }
 
 /**
