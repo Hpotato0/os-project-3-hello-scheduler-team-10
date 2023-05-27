@@ -6,32 +6,40 @@
 ## 0. Running & Testing
 The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example.
 
+## compile test programm
 ```bash
 # trial.c -> trial
-/project-3-hello-scheduler-team-10/test$ make NAME=trial
+/project-3-hello-scheduler-team-10/test$ make NAME=trial    			// do naive trial divistion for finite num and print turnaround time
+/project-3-hello-scheduler-team-10/test$ make NAME=trial_bg 			// infinitly trial division
+/project-3-hello-scheduler-team-10/test$ make NAME=printWRRloads 		// periodicly print load of each wrr rq
+/project-3-hello-scheduler-team-10/test$ make NAME=에러 체크 프로그램!!! 재형하 이름이 뭐
 ```
 
 ## How to test 
 kernel build and run qmeu
 ```bash
 ~/sudo ./_build.sh
-./sudo setup-images.sh
-./mkdir mntdir
-./sudo moount tizen-image/rootfs.img  mntdir
-./sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
-./_run.sh
+~/./sudo setup-images.sh
+~/./mkdir mntdir
+~/./sudo moount tizen-image/rootfs.img  mntdir
+~/./sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
+~/./_run.sh
 // in virtual machine
-./setup.sh
-./log.sh "test weight"
 ```
 ### WRR schedling test
+```base
+root/./setup.sh
+root/./log.sh test_weight // test_weight will be the weight of the your performance test process
+```
 ### Load balancing test
-
-printWRRloads
-
+```base
+root/./printWRRRloads
+root/./setup.sh
+root/./log.sh
+```
 ### Error check
-
-
+```bash
+```
 ## 1. Implementation Overview
 WRR(Weighted Round Robin)
 
@@ -86,6 +94,11 @@ The following scheduler class functions of wrr_sched_class are implemented in `k
 * `switched_to_wrr`
 * `get_rr_interval_wrr`
 
-## 4. Lessons Learned
+## 4. Test result
+![WRR test plot](https://github.com/swsnu/project-3-hello-scheduler-team-10/assets/91672190/288e6a76-fb5b-400b-9b90-ce576d3b3ec4)
+- 테스트 환경 setup.sh: weigh 1~20의 프로그램 20개 background에서 실행
+- 이후 시간 측정하는 프로그램을 weight를 다양하게 하여 추가하여 소요시간 측정 
+- 이를 10회 반복하여 평균값을 기입
+## 5. Lessons Learned
 * `printk` with interrupt disabling can cause deadlocks!
 * stack traces are invaluable 
