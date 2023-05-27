@@ -4019,7 +4019,7 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
     
     // FIXME: which lock goes here?
 
-	raw_spin_lock_irq(&task->pi_lock);
+	raw_spin_lock(&task->pi_lock);
 	orig_weight = (task->wrr_se).weight;
 	if(orig_weight > weight)
         printk("sched_setweight decreasing weight!\n");
@@ -4034,7 +4034,7 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
 		task_rq(task)->wrr.load += weight;
 		raw_spin_unlock(&task_rq(task)->lock);
 	}
-	raw_spin_unlock_irq(&task->pi_lock);
+	raw_spin_unlock(&task->pi_lock);
     
     return 0;
 }
