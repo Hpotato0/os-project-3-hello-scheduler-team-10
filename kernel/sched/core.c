@@ -2321,6 +2321,8 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 			p-> policy = SCHED_WRR; 
 			p->static_prio = NICE_TO_PRIO(0);
 			p->rt_priority = 0;
+			p->wrr_se.weight = 10;
+			p->wrr_se.rem_time_slice = 100;
 		} 
 		else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
@@ -3068,6 +3070,7 @@ void scheduler_tick(void)
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
 
+	/*
 	raw_spin_lock(&wrr_load_balance_lock);
 	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
 	{
@@ -3075,6 +3078,7 @@ void scheduler_tick(void)
 		load_balance_wrr();
 	}
 	raw_spin_unlock(&wrr_load_balance_lock);
+	*/
 	
 #endif
 }
