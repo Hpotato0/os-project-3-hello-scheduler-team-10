@@ -150,9 +150,11 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
         //printk(KERN_ALERT "cpu %d load: %d, is allowed?: %d\n", cpu, cur_load, cpumask_test_cpu(cpu, &p->cpus_allowed));
-        if(lowest_load < cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
+        if(lowest_load > cur_load && cpumask_test_cpu(cpu, &p->cpus_allowed))
         {
             //printk(KERN_ALERT "Target CPU changed to %d with load %d\n", cpu, cur_load);
+            lowest_load = cur_load;
+            lowest_load_cpu = cpu;
         }
     }
     rcu_read_unlock();
@@ -339,7 +341,7 @@ void load_balance_wrr()
     for_each_online_cpu(cpu)
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
-        printk(KERN_ALERT "cpu %d load: %d,", cpu, cur_load);
+        //printk(KERN_ALERT "cpu %d load: %d,", cpu, cur_load);
         if(cur_load > max_load)
         {
             // printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
