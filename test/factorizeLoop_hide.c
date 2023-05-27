@@ -49,8 +49,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    while(loop_num){
-        factorize(loop_num);
+    while(1){
+        factorize(54128);
         loop_num--;
     }
     clock_gettime(CLOCK_MONOTONIC, &end);

@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
         printf("error returned from syscall sched_setweight: %s\n", strerror(errnum));
         return -1;
     }
-
+    
     while(loop_num){
-        factorize(loop_num);
+        factorize(54128);
         loop_num--;
     }
     clock_gettime(CLOCK_MONOTONIC, &end);

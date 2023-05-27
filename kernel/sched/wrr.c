@@ -176,14 +176,11 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 
 /*
 - Description
-  - Initialize the weight and rem_time_slice of forked task_struct
+  - Child task already have parent's context 
 */
 static void task_fork_wrr(struct task_struct *p)
 {
-    rcu_read_lock(); // p->parent could be in another cpu, other locks not needed since p not enqueued yet
-    (p->wrr_se).weight = (p->parent->wrr_se).weight;
-    (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;// for safety
-    rcu_read_unlock();
+
 }
 
 
