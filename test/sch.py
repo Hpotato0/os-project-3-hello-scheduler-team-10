@@ -13,11 +13,11 @@ while True:
       # print(line)
       if not line: break
       array = line.split(' ')
-      # print(array)
-      cmd = array[4]
-      time  = float(array[3][:-1])
-      cpu = int(array[5])
-      pid = array[6][:-1]
+      print(array)
+      cmd = array[3]
+      time  = float(array[2][:-1])
+      cpu = int(array[4])
+      pid = array[5][:-1]
       # if cmd == "task_fork_wrr":
       #       if cpu_task[cpu] and len(cpu_task[cpu][-1]) == 2:
       #             cpu_task[cpu][-1].append(time)

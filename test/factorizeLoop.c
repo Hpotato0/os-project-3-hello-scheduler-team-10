@@ -13,16 +13,16 @@
 # define SYS_SCHED_GETWEIGHT 295
 
 void factorize(int num){
-    printf("Factorizing %d: ", num);
+    // printf("Factorizing %d: ", num);
 
     for(int p = 2; num > 1; p++){
         while(num % p == 0){
-            printf("%d, ", p);
+            // printf("%d, ", p);
             num = num / p;
         }
     }
 
-    printf("DONE\n");
+    // printf("DONE\n");
 }
 
 int main(int argc, char *argv[])
