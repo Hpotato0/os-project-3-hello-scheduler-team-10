@@ -478,7 +478,6 @@ struct cfs_bandwidth { };
 #endif	/* CONFIG_CGROUP_SCHED */
 
 // Wrr-realated fields in a runqueue
-// TODO: FIX ME
 struct wrr_rq {
 	struct list_head wrr_list;
 	int load;
