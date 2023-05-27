@@ -37,15 +37,6 @@ static inline struct sched_wrr_entity *curr_wrr_se(struct wrr_rq* wrr)
     return list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node);
 }
 
-// debug function
-static inline void display_wrr_rq(struct wrr_rq* wrr_rq){
-    struct sched_wrr_entity *wrr_se;
-    printk("[%s]", __func__);
-    list_for_each_entry_rcu(wrr_se, &wrr_rq->wrr_list, list_node) {
-        printk("task %d ->", wrr_task_of(wrr_se)->pid);
-    }
-}
-
 
 /*
 - NOTE: Before calling dequeue_task_wrr, you have to take a lock
@@ -58,10 +49,7 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
 {
     struct wrr_rq * wrr_rq = task_wrr_rq(p);
     struct sched_wrr_entity  *wrr_se = &p->wrr_se;
-    // debug    
-    struct task_struct *debug = wrr_task_of(wrr_se); 
-    printk("[%s] CPU: %d pid: %d\n" , __func__, cpu_of(rq), debug->pid);
-    
+
     list_add_tail(&wrr_se->list_node, & wrr_rq->wrr_list);
 
     // resched_curr(rq);
@@ -85,17 +73,11 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)
     struct wrr_rq *wrr_rq = task_wrr_rq(p);
     struct sched_wrr_entity  *wrr_se = &p->wrr_se;
     
-    // debug
-    struct task_struct *debug = wrr_task_of(wrr_se); 
-    printk("[%s] CPU: %d pid: %d\n" , __func__, cpu_of(rq), debug->pid);
     list_del_init(&wrr_se->list_node);
 
-    // resched_curr(rq);
-    // update wrr_rq total load
     wrr_rq->load -= wrr_se->weight;
     wrr_se->rem_time_slice = wrr_se->weight * WRR_TIME_SLICE_UNIT;
     sub_nr_running(rq, 1);
-    // display_wrr_rq(wrr_rq);
 }
 
 /*
@@ -110,10 +92,6 @@ static void yield_task_wrr(struct rq *rq)
     struct wrr_rq *wrr_rq = &rq->wrr;
     struct sched_wrr_entity *wrr_se = list_first_entry(&wrr_rq->wrr_list, struct sched_wrr_entity, list_node);
     
-    // debug
-    struct task_struct *debug = wrr_task_of(wrr_se); 
-    printk("[%s] CPU: %d pid: %d\n" , __func__, cpu_of(rq), debug->pid);
-    
     list_move_tail(&wrr_se->list_node, &wrr_rq->wrr_list);
     
     // time slice update
@@ -125,14 +103,12 @@ static void yield_task_wrr(struct rq *rq)
 static bool yield_to_task_wrr(struct rq *rq, struct task_struct *p, bool preempt)
 {    
     // debug
-    printk("[%s]", __func__);
     yield_task_wrr(rq);
     return true;
 }
 
 static void check_preempt_wakeup_wrr(struct rq *rq, struct task_struct *p, int wake_flags)
 {
-    printk("[%s]", __func__);
     // Do not need
 }
 
@@ -143,7 +119,6 @@ static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct
     // debug
     // struct sched_wrr_entity *wrr_se = list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node);
     struct task_struct *curr = wrr_task_of(list_first_entry(&wrr->wrr_list, struct sched_wrr_entity, list_node));
-    printk("[%s] CPU: %d prev_pid: %d curr_pid: %d" , __func__, cpu_of(rq), prev->pid, curr->pid);
     if(list_empty(&wrr->wrr_list))
         return NULL;
     return curr;
@@ -151,7 +126,6 @@ static struct task_struct * pick_next_task_wrr(struct rq *rq, struct task_struct
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *prev)
 {
-    printk("[%s]\n" , __func__);
     // do not need
 }
 
@@ -182,7 +156,6 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
         }
     }
     rcu_read_unlock();
-    //printk(KERN_ALERT "************* select_task_rq_wrr end ************\n");
     preempt_enable();
     return lowest_load_cpu;
 }
@@ -190,27 +163,23 @@ static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, 
 
 static void rq_online_wrr(struct rq *rq)
 {
-    printk("[%s] \n" , __func__);
     // do not need
 }
 
 static void rq_offline_wrr(struct rq *rq)
 {
-    printk("[%s] \n" , __func__);
     // do not need
 }
 
 static void task_dead_wrr(struct task_struct *p)
 {
-    struct rq *rq = task_rq(p);
-    struct sched_wrr_entity *wrr_se = &p->wrr_se;
-    printk("[%s] CPU: %d pid: %d remain time: %d\n" ,__func__, cpu_of(rq), p->pid, wrr_se->rem_time_slice );   
+    // struct rq *rq = task_rq(p);
+    // struct sched_wrr_entity *wrr_se = &p->wrr_se;
     // do not need
 }
 
 static void set_curr_task_wrr(struct rq *rq)
 {
-    printk("[%s] \n" , __func__);
     // do not need
 }
 
@@ -224,10 +193,8 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 {
     // struct wrr_rq *wrr;
     struct sched_wrr_entity *wrr_se = &curr->wrr_se;
-    printk("[%s] CPU: %d curr_pid: %d remain time: %d" , __func__, cpu_of(rq), curr->pid, wrr_se->rem_time_slice);
     wrr_se->rem_time_slice--;
     if (wrr_se->rem_time_slice < 0){
-        printk("[Need deque, enque]");
         dequeue_task_wrr(rq, curr, 0);
         enqueue_task_wrr(rq, curr, 0);
         resched_curr(rq);
@@ -242,9 +209,6 @@ static void task_fork_wrr(struct task_struct *p)
     struct rq *rq = this_rq(); //? task_rq(p)
     struct rq_flags rf;
 
-    printk("[%s] CPU: %d pid: %d-------------------------------" , __func__, cpu_of(rq), p->pid);
-    // dump_stack();
-
     rq_lock(rq, &rf);
 	
     // debug
@@ -256,7 +220,6 @@ static void task_fork_wrr(struct task_struct *p)
 
 static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
 {
-    printk("[%s]", __func__);
     // do not need
 }
 
@@ -264,14 +227,12 @@ static void switched_from_wrr(struct rq *rq, struct task_struct *p)
 {
     // TODO.. Q) dequeue가 있는데 필요한가?
     // rq->wrr->load -= p->wrr_se->weight; @J CHECK! if not careful might double-subtract
-    printk("[%s]", __func__);
     (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;
 }
 
 static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 {
     // TODO.. Q) enqueue가 있는데 필요한가?
-    printk("[%s]", __func__);
     (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;
 }
 
@@ -282,13 +243,11 @@ static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 */
 static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
 {
-    printk("[%s]", __func__);
     return ((task->wrr_se).weight) * WRR_TIME_SLICE_UNIT;
 }
 
 static void update_curr_wrr(struct rq *rq)
 {
-    printk("[%s]", __func__);
     // do not need
 }
 
@@ -373,29 +332,29 @@ void load_balance_wrr()
     int min_load = 999999;
     int cur_load  = 0;
     int cpu = 0;
-    printk("[%s]", __func__);
+    // printk("[%s]", __func__);
     preempt_disable();
     rcu_read_lock();
-    printk(KERN_ALERT "Finding min & max cpus\n");
+    // printk(KERN_ALERT "Finding min & max cpus\n");
     for_each_online_cpu(cpu)
     {
         cur_load = (cpu_rq(cpu)->wrr).load;
         printk(KERN_ALERT "cpu %d load: %d,", cpu, cur_load);
         if(cur_load > max_load)
         {
-            printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
+            // printk(KERN_ALERT "max CPU changed to %d with load %u\n", cpu, cur_load);
             max_load = cur_load;
             max_cpu = cpu;
         }
         if(cur_load < min_load)
         {
-            printk(KERN_ALERT "min CPU changed to %d with load %u\n", cpu, cur_load);
+            // printk(KERN_ALERT "min CPU changed to %d with load %u\n", cpu, cur_load);
             min_load = cur_load;
             min_cpu = cpu;
         }
     }
     rcu_read_unlock();
-    printk(KERN_ALERT "min_cpu: %d, min_load: %u, max_cpu: %d, max_load: %u\n", min_cpu, min_load, max_cpu, max_load);
+    // printk(KERN_ALERT "min_cpu: %d, min_load: %u, max_cpu: %d, max_load: %u\n", min_cpu, min_load, max_cpu, max_load);
 
     if(max_cpu == min_cpu || max_load <= min_load)
         goto balance_end;
@@ -408,10 +367,10 @@ void load_balance_wrr()
         if(cur_wrr_entity){
             cur_task = wrr_task_of(cur_wrr_entity);
             raw_spin_lock(&cur_task->pi_lock);
-            printk(KERN_ALERT "task weight: %d, is allowed?: %d\n", cur_wrr_entity->weight, cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed));
+            // printk(KERN_ALERT "task weight: %d, is allowed?: %d\n", cur_wrr_entity->weight, cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed));
             if(((src_rq->wrr).load - (dst_rq->wrr).load > ((cur_wrr_entity->weight)*2)) && cpumask_test_cpu(min_cpu, &cur_task->cpus_allowed) && src_rq->curr != cur_task)
             {
-                printk(KERN_ALERT "select this task for load balancing!\n");
+                // printk(KERN_ALERT "select this task for load balancing!\n");
                 migrate_task = cur_task;
                 break;
             }
@@ -423,17 +382,17 @@ void load_balance_wrr()
         deactivate_task(src_rq, migrate_task, 0);
 		set_task_cpu(migrate_task, min_cpu);
 		activate_task(dst_rq, migrate_task, 0);
-        printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
-                  "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
-                  "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
-                  "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
-		  (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
-          migrate_task->comm, migrate_task->wrr_se.weight);
+        // printk(KERN_DEBUG "[WRR LOAD BALANCING] jiffies: %Ld\n"
+        //           "[WRR LOAD BALANCING] max_cpu: %d, total weight: %u\n"
+        //           "[WRR LOAD BALANCING] min_cpu: %d, total weight: %u\n"
+        //           "[WRR LOAD BALANCING] migrated task name: %s, task weight: %u\n",
+		//   (long long)(jiffies), max_cpu, max_load, min_cpu, min_load,
+        //   migrate_task->comm, migrate_task->wrr_se.weight);
         raw_spin_unlock(&migrate_task->pi_lock);
     }
     else
     {
-        printk(KERN_ALERT "Cannot move any task!\n");
+        // printk(KERN_ALERT "Cannot move any task!\n");
     }
     double_rq_unlock(src_rq, dst_rq);
 balance_end:
