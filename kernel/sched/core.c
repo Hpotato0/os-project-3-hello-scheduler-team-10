@@ -4000,7 +4000,10 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         return -EINVAL;
     }
 
-    task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	if(pid != 0)
+    	task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	else
+		task = current;
     
     if(task == NULL){
         printk("sched_setweight ERROR: no such task exists!\n");
@@ -4012,23 +4015,30 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         return -EINVAL;
     }
 
-    if(0){
-        // TODO
-        return -EPERM;
-    }
-    
-    // FIXME: which lock goes here?
-
-	raw_spin_lock(&task->pi_lock);
+	raw_spin_lock(&task->pi_lock); // task_on_rq_queued must not change during this process
 	orig_weight = (task->wrr_se).weight;
-	if(orig_weight > weight)
-        printk("sched_setweight decreasing weight!\n");
-    else
-        printk("sched_setweight increasing weight!\n"); //TODO: sometime illegal
-    (task->wrr_se).weight = weight;
+
+	if(orig_weight < weight){
+		// only root can increase weight
+		if(!uid_eq(current_uid(), KUIDT_INIT(0))){
+			raw_spin_unlock(&task->pi_lock);
+			return -EPERM;
+		}
+		printk("sched_setweight increasing weight!(root)\n"); 
+	}
+	else{
+		// only root or owner of the task can decrease its weight
+		if(!(uid_eq(current_uid(), KUIDT_INIT(0)) || uid_eq(current_uid(), task_uid(task)))){
+			raw_spin_unlock(&task->pi_lock);
+			return -EPERM;
+		}
+		printk("sched_setweight decreasing weight!\n");
+	}
+
+	(task->wrr_se).weight = weight;
 
 	if(task_on_rq_queued(task))
-	{
+	{	// the task is definately inside the WRR queue at this point
 		raw_spin_lock(&task_rq(task)->lock);
 		task_rq(task)->wrr.load -= orig_weight;
 		task_rq(task)->wrr.load += weight;
@@ -4054,7 +4064,10 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
         return -EINVAL;
     }
 
-    task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	if(pid != 0)
+    	task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	else
+		task = current;
     
     if(task == NULL){
         printk("sched_setweight ERROR: no such task exists!\n");
@@ -4066,12 +4079,6 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
         return -EINVAL;
     }
 
-    if(0){
-        // SO NO EPERM error here?
-        return -EPERM;
-    }
-
-    // is lock needed?
 	rcu_read_lock();
 	w = (task->wrr_se).weight;
 	rcu_read_unlock();
