@@ -2321,8 +2321,6 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 			p-> policy = SCHED_WRR; 
 			p->static_prio = NICE_TO_PRIO(0);
 			p->rt_priority = 0;
-			p->wrr_se.weight = 10;
-			p->wrr_se.rem_time_slice = 100;
 		} 
 		else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
