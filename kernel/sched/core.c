@@ -3998,11 +3998,11 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
     struct task_struct* task;
     int orig_weight;
 
-
     if(pid < 0 || weight < 1 || weight > 20){
         return -EINVAL;
     }
 
+	// if pid == 0 act on the task that called
 	if(pid != 0)
     	task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
 	else
@@ -4016,7 +4016,8 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         return -EINVAL;
     }
 
-	raw_spin_lock(&task->pi_lock); // task_on_rq_queued must not change during this process
+	// task_on_rq_queued & weight must not change during this process (could effect load)
+	raw_spin_lock(&task->pi_lock);
 	orig_weight = (task->wrr_se).weight;
 
 	if(orig_weight < weight){
@@ -4056,7 +4057,6 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
     struct task_struct* task;
 	long w;
 
-
     if(pid < 0){
         return -EINVAL;
     }
@@ -4074,6 +4074,7 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
         return -EINVAL;
     }
 
+	// only reading.. even this lock may be redundant
 	rcu_read_lock();
 	w = (task->wrr_se).weight;
 	rcu_read_unlock();
