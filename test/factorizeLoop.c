@@ -54,11 +54,9 @@ int main(int argc, char *argv[])
         loop_num--;
     }
     clock_gettime(CLOCK_MONOTONIC, &end);
-    printf("start time: %ld %ld \n", begin.tv_sec, begin.tv_nsec);
-    printf("end time: %ld %ld \n", end.tv_sec, end.tv_nsec);
 
-    double spent_time = (double)(end.tv_sec - begin.tv_sec) + (double)((end.tv_nsec - begin.tv_nsec)/1000000000);
-    printf("\n\nThe elasped time is %.6lf s \n", spent_time);
+    double spent_time = (double)(end.tv_sec - begin.tv_sec) + (double)(end.tv_nsec - begin.tv_nsec)/(double)1000000000;
+    printf("\n\nThe elasped time is %.6lf s , weight is %d \n", spent_time, weight);
     return 0;
 }
 
