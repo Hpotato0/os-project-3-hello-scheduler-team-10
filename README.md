@@ -65,6 +65,8 @@ struct rq {
     ...
 }
 ```
+* `wrr_list`: since `struct list_head` is a doubly linked list, an extra node is used to mark the front & rear of the queue (`wrr_list` is placed in between the front & rear of the queue)
+* `load`: the sum of weights in this `wrr_rq`, used for load balancing
 
 ## 3. Implementation: Scheduler Class Functions
 
@@ -96,5 +98,5 @@ const struct sched_class wrr_sched_class = {
 ```
 
 ## 4. Lessons Learned
-* `printk`s with interrupt disabling can cause deadlocks!
+* `printk` with interrupt disabling can cause deadlocks!
 * stack traces are invaluable 
