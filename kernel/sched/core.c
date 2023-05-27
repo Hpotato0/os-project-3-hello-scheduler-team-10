@@ -754,7 +754,9 @@ void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
 {
 	if (task_contributes_to_load(p))
 		rq->nr_uninterruptible++;
-	printk(KERN_DEBUG "%s %d %d\n", __func__, cpu_of(rq), p->pid);
+
+	printk(KERN_DEBUG "%s %d %d %s\n", __func__, cpu_of(rq), p->pid, p->comm);
+
 	dequeue_task(rq, p, flags);
 }
 
@@ -2794,8 +2796,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	       struct task_struct *next, struct rq_flags *rf)
 {
 	struct mm_struct *mm, *oldmm;
-	printk(KERN_DEBUG"%s %d %d\n", __func__, cpu_of(task_rq(next)), next->pid);
-
+	printk(KERN_DEBUG"%s %d %d %s\n", __func__, cpu_of(task_rq(next)), next->pid, next->comm);
 	prepare_task_switch(rq, prev, next);
 
 	mm = next->mm;
