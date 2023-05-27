@@ -227,14 +227,14 @@ static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
 
 static void switched_from_wrr(struct rq *rq, struct task_struct *p)
 {
-    // TODO.. Q) dequeue가 있는데 필요한가?
-    // rq->wrr->load -= p->wrr_se->weight; @J CHECK! if not careful might double-subtract
+    // not necessary.. just to be safe
     (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;
 }
 
 static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 {
-    // TODO.. Q) enqueue가 있는데 필요한가?
+    // overwrites possible garbage after enqueue
+    (p->wrr_se).weight = 10;
     (p->wrr_se).rem_time_slice = (p->wrr_se).weight * WRR_TIME_SLICE_UNIT;
 }
 
