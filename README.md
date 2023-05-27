@@ -26,7 +26,11 @@ kernel build and run qmeu
 ```
 ### WRR schedling test
 ### Load balancing test
+
+printWRRloads
+
 ### Error check
+
 
 ## 1. Implementation Overview
 WRR(Weighted Round Robin)
@@ -69,33 +73,18 @@ struct rq {
 * `load`: the sum of weights in this `wrr_rq`, used for load balancing
 
 ## 3. Implementation: Scheduler Class Functions
-
-in `kernel/sched/wrr.c`
-```C
-const struct sched_class wrr_sched_class = {
-	.next			    = &fair_sched_class, 
-	
-    .enqueue_task		= enqueue_task_wrr,
-	.dequeue_task		= dequeue_task_wrr, 
-	
-    .yield_task		    = yield_task_wrr, 
-	.yield_to_task		= yield_to_task_wrr, 
-
-	.pick_next_task		= pick_next_task_wrr,
-
-#ifdef CONFIG_SMP
-	.select_task_rq		= select_task_rq_wrr, 
-#endif
-
-	.task_tick		    = task_tick_wrr, 
-	.task_fork		    = task_fork_wrr,
-
-	.switched_from		= switched_from_wrr, 
-	.switched_to		= switched_to_wrr, 
-
-	.get_rr_interval	= get_rr_interval_wrr,
-};
-```
+The following scheduler class functions of wrr_sched_class are implemented in `kernel/sched/wrr.c`.
+* `enqueue_task_wrr`
+* `dequeue_task_wrr`
+* `yield_task_wrr`
+* `yield_to_task_wrr`
+* `pick_next_task_wrr`
+* `select_task_rq_wrr`
+* `task_tick_wrr`
+* `task_fork_wrr`
+* `switched_from_wrr`
+* `switched_to_wrr`
+* `get_rr_interval_wrr`
 
 ## 4. Lessons Learned
 * `printk` with interrupt disabling can cause deadlocks!
