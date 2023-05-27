@@ -4029,8 +4029,9 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
         printk("sched_setweight increasing weight!\n"); //TODO: sometime illegal
     
     // FIXME: which lock goes here?
+	rcu_read_lock();
     (task->wrr_se).weight = weight;
-    // do we even need a lock?
+	rcu_read_unlock();
     
     return 0;
 }
@@ -4067,7 +4068,10 @@ SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
     }
 
     // is lock needed?
-    return (task->wrr_se).weight;
+	rcu_read_lock();
+	int w = (task->wrr_se).weight;
+	rcu_read_unlock()
+    return w;
 }
 
 /**
