@@ -360,3 +360,11 @@ balance_end:
     preempt_enable();
 }
 
+#ifdef CONFIG_SCHED_DEBUG
+void print_wrr_stats(struct seq_file *m, int cpu)
+{
+	rcu_read_lock();
+	print_wrr_rq(m, cpu, &(cpu_rq(cpu))->wrr);
+	rcu_read_unlock();
+}
+#endif /* CONFIG_SCHED_DEBUG */
