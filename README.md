@@ -6,11 +6,11 @@
 The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example.
 ```bash
 # trial.c -> trial
-/project-3-hello-scheduler-team-10/test$ make NAME=trial    			// do naive trial divistion for finite num and print turnaround time
-/project-3-hello-scheduler-team-10/test$ make NAME=trial_bg 			// infinitly trial division
-/project-3-hello-scheduler-team-10/test$ make NAME=printWRRloads 		// periodicly print load of each wrr rq
-/project-3-hello-scheduler-team-10/test$ make NAME=sched_setweight		// 'wrapper' code of the new system call sched_setweight
-/project-3-hello-scheduler-team-10/test$ make NAME=sched_getweight		// 'wrapper' code of the new system call sched getweight
+/project-3-hello-scheduler-team-10/test$ make NAME=trial    			# do naive trial divistion for finite num and print turnaround time
+/project-3-hello-scheduler-team-10/test$ make NAME=trial_bg 			# infinitly trial division
+/project-3-hello-scheduler-team-10/test$ make NAME=printWRRloads 		# periodicly print load of each wrr rq
+/project-3-hello-scheduler-team-10/test$ make NAME=sched_setweight		# 'wrapper' code of the new system call sched_setweight
+/project-3-hello-scheduler-team-10/test$ make NAME=sched_getweight		# 'wrapper' code of the new system call sched getweight
 ```
 
 ## How to test 
