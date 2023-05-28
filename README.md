@@ -1,6 +1,6 @@
 # Project 3: hello, scheduler!
 * team 10: 김현석, 홍주원, 주재형
-* test code directory: `./test/`
+* test code directory: `test/`
 
 ## 0. Running & Testing
 The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example. As in project0, to actually run the tests one should mount `rootfs.img`, copy the necessary files, unmount, and boot QEMU. To access the files in `/root` when logged in as `owner`, one can use `su`, type `tizen` for password, `cp` the files from root into an accessible directory, and type `exit`.
