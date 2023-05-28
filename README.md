@@ -16,26 +16,26 @@ The kernel build, test code compilation & running procedure did not change from 
 ## How to test 
 kernel build and run qmeu
 ```bash
-~/sudo ./_build.sh
-~/sudo ./setup-images.sh
-~/./mkdir mntdir
-~/./sudo moount tizen-image/rootfs.img  mntdir
-~/./sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
-~/./_run.sh
+/project-3-hello-scheduler-team-10$ ./_build.sh
+/project-3-hello-scheduler-team-10$ sudo ./setup-images.sh
+/project-3-hello-scheduler-team-10$ mkdir mntdir
+/project-3-hello-scheduler-team-10$ sudo moount tizen-image/rootfs.img  mntdir
+/project-3-hello-scheduler-team-10$ sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
+/project-3-hello-scheduler-team-10$ ./_run.sh
 // in virtual machine
 ```
 
 ### WRR schedling test
 ```base
-root/./setup.sh			# start 20 background testing enviroonment program
-root/./log.sh test_weight  	# test_weight will be the weight of the your performance test process
+root$ ./setup.sh			# start 20 background testing enviroonment program
+root$ ./log.sh test_weight  		# test_weight will be the weight of the your performance test process
 ```
 
 ### Load balancing test
 ```base
-root/./printWRRRloads		# periodicaly print load state of each wrr_rq
-root/./setup.sh			# start 20 background testing enviroonment program
-root/./log.sh test_weight  	# test_weight will be the weight of the your performance test process
+root$ ./printWRRRloads		# periodicaly print load state of each wrr_rq
+root$ ./setup.sh		# start 20 background testing enviroonment program
+root$ ./log.sh test_weight  	# test_weight will be the weight of the your performance test process
 ```
 
 ## 1. Implementation Overview
