@@ -21,6 +21,7 @@ kernel build and run qmeu
 /project-3-hello-scheduler-team-10$ mkdir mntdir
 /project-3-hello-scheduler-team-10$ sudo moount tizen-image/rootfs.img  mntdir
 /project-3-hello-scheduler-team-10$ sudo cp test/trial test/trial_bg test/log.sh test/setup.sh test/sched_setweight test/sched_getweight mntdir/root
+/project-3-hello-scheduler-team-10$ sudo umount mntdir
 /project-3-hello-scheduler-team-10$ ./_run.sh
 // in virtual machine
 ```
