@@ -35,9 +35,9 @@ root$ ./log.sh test_weight  		# test_weight will be the weight of the your perfo
 
 ### Load balancing test
 ```bash
-root$ ./printWRRRloads		# periodicaly print load state of each wrr_rq
 root$ ./setup.sh		# start 20 background testing enviroonment program
 root$ ./log.sh test_weight  	# test_weight will be the weight of the your performance test process
+root$ ./printWRRloads		# print the loads if each WRR queue
 ```
 
 ## 1. Implementation Overview
