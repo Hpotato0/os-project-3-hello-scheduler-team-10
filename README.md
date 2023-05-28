@@ -116,4 +116,7 @@ The following functions are also implemented in `kernel/sched/wrr.c`.
 
 ## 5. Lessons Learned
 * `printk` with interrupt disabling can cause deadlocks!
-* stack traces are invaluable 
+* stack traces are invaluable when debugging
+* the linux scheduler defines & utilizes various locks & methods
+* one should NOT assume too quickly about the precise functionality of an unknown function w/o searching…
+
