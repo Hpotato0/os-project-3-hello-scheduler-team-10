@@ -86,20 +86,20 @@ struct rq {
 The following scheduler class functions of `wrr_sched_class` are implemented in `kernel/sched/wrr.c`.
 * `enqueue_task_wrr`	: enqueue a task into the queue
 * `dequeue_task_wrr`	: dequeue a task from the queue
-* `yield_task_wrr`	: 
-* `yield_to_task_wrr`	:
+* `yield_task_wrr`	: move a task at the front of the queue to the rear
+* `yield_to_task_wrr`	: ??
 * `pick_next_task_wrr`	: pick the next task to run(i.e. the task at the front of the queue)
 * `select_task_rq_wrr`	: find the wrr_rq with the smallest weight(for choosing which wrr_rq to enqueue a new task to)
-* `task_tick_wrr`	:
-* `task_fork_wrr`	: 
-* `switched_from_wrr`	:
-* `switched_to_wrr`	:
+* `task_tick_wrr`	: the necessary actions per tick(if the currently running task has run out of its timeslice, move it to the rear of the queue and mark the task for rescheduling)
+* `task_fork_wrr`	: the necessary actions when fork happens(can actually be left empty! the WRR weight is inherited 'automatically')
+* `switched_from_wrr`	: the necessary actions when a task is switched from wrr into another scheduler
+* `switched_to_wrr`	: the necessary actions when a task is switched into wrr from another scheduler(set weight to default weight)
 * `get_rr_interval_wrr`	: (optional) for printing the timeslice given to a task via `sched_rr_get_interval()`
 
 The following functions are also implemented in `kernel/sched/wrr.c`.
-* `load_balance_wrr`	:
-* `print_wrr_stats`	:
-* `init_wrr_rq`		:
+* `load_balance_wrr`	: called in `scheduler_tick` of `kernel/sched/core.c` periodically to attempt load balancing 
+* `print_wrr_stats`	: for printing the load if each `wrr_rq` via `cat /proc/sched_debug`
+* `init_wrr_rq`		: initializes `wrr_rq` with an empty list and load of 0
 * `init_sched_wrr_class`: can be left empty
 
 ## 4. Test result
