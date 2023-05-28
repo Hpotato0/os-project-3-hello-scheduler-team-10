@@ -3,7 +3,8 @@
 * test code directory: `~/test/`
 
 ## 0. Running & Testing
-The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example.
+The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example. As in project0, to actually run the tests one should mount `rootfs.img`, copy the necessary files, unmount, and boot QEMU. To access the files in `/root` when logged in as `owner`, one can use `su`, type `tizen` for password, copy(`cp`) the files from root into an accessible directory, and type `exit`.
+
 ```bash
 # usage: ./trial [self_weight] [loop_num]
 # set weight to [self_weight] and repeat naive division trial factorization [loop_num} times
@@ -21,22 +22,9 @@ The kernel build, test code compilation & running procedure did not change from 
 # call the new system call sched_setweight([pid], [weight])
 /project-3-hello-scheduler-team-10/test$ make NAME=sched_setweight
 
-# usage: ./sched_getweight [pid[
+# usage: ./sched_getweight [pid]
 # call the new system call sched_getweight([pid]) and print the returned weight value
 /project-3-hello-scheduler-team-10/test$ make NAME=sched_getweight
-```
-
-## How to test 
-kernel build and run qmeu
-```bash
-/project-3-hello-scheduler-team-10$ ./_build.sh
-/project-3-hello-scheduler-team-10$ sudo ./setup-images.sh
-/project-3-hello-scheduler-team-10$ mkdir mntdir
-/project-3-hello-scheduler-team-10$ sudo moount tizen-image/rootfs.img  mntdir
-/project-3-hello-scheduler-team-10$ sudo cp test/trial test/trial_bg test/log.sh test/setup.sh test/sched_setweight test/sched_getweight mntdir/root
-/project-3-hello-scheduler-team-10$ sudo umount mntdir
-/project-3-hello-scheduler-team-10$ ./_run.sh
-// in virtual machine
 ```
 
 ### WRR schedling test
