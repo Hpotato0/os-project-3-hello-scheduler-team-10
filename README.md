@@ -1,6 +1,6 @@
 # Project 3: hello, scheduler!
 * team 10: 김현석, 홍주원, 주재형
-* test code directory: `test/`
+* test code directory: `~/test/`
 
 ## 0. Running & Testing
 The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example.
@@ -17,7 +17,7 @@ The kernel build, test code compilation & running procedure did not change from 
 kernel build and run qmeu
 ```bash
 ~/sudo ./_build.sh
-~/./sudo setup-images.sh
+~/sudo ./setup-images.sh
 ~/./mkdir mntdir
 ~/./sudo moount tizen-image/rootfs.img  mntdir
 ~/./sudo cp test/factorizLoop test/factorizLoop_hide test/log.sh test/setup.sh mntdir/root
@@ -27,15 +27,15 @@ kernel build and run qmeu
 
 ### WRR schedling test
 ```base
-root/./setup.sh
-root/./log.sh test_weight  # test_weight will be the weight of the your performance test process
+root/./setup.sh			# start 20 background testing enviroonment program
+root/./log.sh test_weight  	# test_weight will be the weight of the your performance test process
 ```
 
 ### Load balancing test
 ```base
-root/./printWRRRloads
-root/./setup.sh
-root/./log.sh
+root/./printWRRRloads		# periodicaly print load state of each wrr_rq
+root/./setup.sh			# start 20 background testing enviroonment program
+root/./log.sh test_weight  	# test_weight will be the weight of the your performance test process
 ```
 
 ## 1. Implementation Overview
@@ -99,10 +99,19 @@ The following functions are also implemented in `kernel/sched/wrr.c`.
 * `init_sched_wrr_class`: can be left empty
 
 ## 4. Test result
-![WRR test plot](https://github.com/swsnu/project-3-hello-scheduler-team-10/assets/91672190/288e6a76-fb5b-400b-9b90-ce576d3b3ec4)
-- 테스트 환경 setup.sh: weigh 1~20의 프로그램 20개 background에서 실행
-- 이후 시간 측정하는 프로그램을 weight를 다양하게 하여 추가하여 소요시간 측정 
-- 이를 10회 반복하여 평균값을 기입
+- Test envirnoment
+	- We run our elasped time measurment program ("trail") with 20 competier programs ("trial_bg"), which are running infinity with different weight (1~20).
+	- "trial" program performs factorization on a random number (54128) a finite number of times (100000) and outputs the elapled time.
+	- We repeadted each test 1- times with different weights in the sme environment and measured the average.
+	
+<p align="center"><img src="https://github.com/swsnu/project-3-hello-scheduler-team-10/assets/91672190/98dfcbe8-e023-46d0-bad3-e74fbca343cc"></p>
+
+ Before testing, we estimated the elaped time is inversely proportional the the weight protion.
+
+<p align="center"><img src="https://github.com/swsnu/project-3-hello-scheduler-team-10/assets/91672190/a290ec6e-ef88-4596-8056-0dc25a266077"></p>
+ The blue line means our testing result and orange line means the theoretical value calculated based on the weight portion. It can be observec that the elapsd time is inversely proportional to the weight portion. We calculated estimated elapsed time based on test result and weight portion. Slight discrepancies may exist, but the two graphs exhibit the same tremd.
+
+  
 
 ## 5. Lessons Learned
 * `printk` with interrupt disabling can cause deadlocks!
