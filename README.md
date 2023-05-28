@@ -3,7 +3,7 @@
 * test code directory: `~/test/`
 
 ## 0. Running & Testing
-The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example. As in project0, to actually run the tests one should mount `rootfs.img`, copy the necessary files, unmount, and boot QEMU. To access the files in `/root` when logged in as `owner`, one can use `su`, type `tizen` for password, copy(`cp`) the files from root into an accessible directory, and type `exit`.
+The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example. As in project0, to actually run the tests one should mount `rootfs.img`, copy the necessary files, unmount, and boot QEMU. To access the files in `/root` when logged in as `owner`, one can use `su`, type `tizen` for password, `cp` the files from root into an accessible directory, and type `exit`.
 
 ```bash
 # usage: ./trial [self_weight] [loop_num]
@@ -27,7 +27,7 @@ The kernel build, test code compilation & running procedure did not change from 
 /project-3-hello-scheduler-team-10/test$ make NAME=sched_getweight
 ```
 
-### WRR schedling test
+### WRR scheduling test
 ```base
 root$ ./setup.sh			# start 20 background testing enviroonment program
 root$ ./log.sh test_weight  		# test_weight will be the weight of the your performance test process
@@ -41,7 +41,7 @@ root$ ./log.sh test_weight  	# test_weight will be the weight of the your perfor
 ```
 
 ## 1. Implementation Overview
-WRR(Weighted Round Robin)
+A WRR(Weighted Round Robin) scheduler is implemented, and replaces the CFS scheduler. We defined a new scheduler class `wrr_sched_class` and implemented the necessary 'member functions'. The new functions are mostly implemented in `kernel/sched/wrr.c`. The kernel code has been modified in various locations-mainly `kernel/sched/core.c`, `include/linux/sched.h`, `kernel/sched/sched.h`, `init/init_task.c`-to register & support the new scheduler class.
 
 ## 2. Implementation: Registering WRR into Structs
 **include/linux/sched.h**
@@ -81,7 +81,7 @@ struct rq {
 * `load`: the sum of weights in this `wrr_rq`, used for load balancing
 
 ## 3. Implementation: Scheduler Class Functions
-The following scheduler class functions of wrr_sched_class are implemented in `kernel/sched/wrr.c`.
+The following scheduler class functions of `wrr_sched_class` are implemented in `kernel/sched/wrr.c`.
 * `enqueue_task_wrr`	:
 * `dequeue_task_wrr`	:
 * `yield_task_wrr`	:
