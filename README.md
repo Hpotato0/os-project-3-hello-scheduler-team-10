@@ -112,7 +112,7 @@ The following functions are also implemented in `kernel/sched/wrr.c`.
  Before testing, we estimated the elaped time is inversely proportional the the weight protion.
 
 <p align="center"><img src="https://github.com/swsnu/project-3-hello-scheduler-team-10/assets/91672190/a290ec6e-ef88-4596-8056-0dc25a266077"></p>
- The blue line means our testing result and orange line means the theoretical value calculated based on the weight portion. It can be observec that the elapsd time is inversely proportional to the weight portion. We calculated estimated elapsed time based on test result and weight portion. Slight discrepancies may exist, but the two graphs exhibit the same tremd.
+ The blue line means our testing result and orange line means the theoretical value calculated based on the weight portion. It can be observec that the elapsd time is inversely proportional to the weight portion. We calculated estimated elapsed time based on test result and weight portion. Slight discrepancies may exist, but the two graphs exhibit the same trend.
 
 ## 5. Lessons Learned
 * `printk` with interrupt disabling can cause deadlocks!
