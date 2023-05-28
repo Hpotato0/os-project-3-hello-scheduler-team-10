@@ -112,6 +112,8 @@ static void put_prev_task_wrr(struct rq *rq, struct task_struct *prev)
 /*
 - Desciption
     - Find the wrr_rq with the smallest weight
+    - This function assumes that a caller acquired the pi_lock of p before call
+    - Just acquire rcu_read_lock for read performance
 */
 static int select_task_rq_wrr(struct task_struct *p, int prev_cpu, int sd_flag, int wake_flags)
 {
@@ -180,7 +182,7 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *curr, int queued)
 */
 static void task_fork_wrr(struct task_struct *p)
 {
-
+    // do not need
 }
 
 
@@ -191,7 +193,7 @@ static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
 
 /*
 - Description
-  - Switched form wrr scheduler to antoerh scheduler
+  - Switched from wrr scheduler to another scheduler
 */
 static void switched_from_wrr(struct rq *rq, struct task_struct *p)
 {
@@ -200,7 +202,7 @@ static void switched_from_wrr(struct rq *rq, struct task_struct *p)
 
 /*
 - Description
-  - Switched form another scheduler to wrr scheduler
+  - Switched from another scheduler to wrr scheduler
 */
 static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 {
@@ -211,7 +213,7 @@ static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 
 /*
 - Description
-    - return the default timeslice of a process.
+    - return the timeslice of a process.
 */
 static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
 {
@@ -275,7 +277,9 @@ __init void init_sched_wrr_class(void)
 	// Do not need
 }
 
-
+/*
+* Initialize wrr_list (current wrr task list) or wrr of rq
+*/
 void init_wrr_rq(struct wrr_rq *wrr)
 {
 	INIT_LIST_HEAD(&wrr->wrr_list);
@@ -285,7 +289,12 @@ void init_wrr_rq(struct wrr_rq *wrr)
 /*
 - Description
     - Balance the load of each wrr rq 
-    - Find the most and least weighted rq and move the first tranferable task
+    - Find the most and least weighted rq (max-min cpu) and move the first transferable task
+    - A task is transferable if its affinity fits min cpu
+      and reversal of load of max-min cpu won't happen after migration
+    - Need to get pi_lock of task to ensure that task doesn't get migrated somewhere else
+    - Need to get rq_lock of max-min cpu to enqueue-dequeue the migration task
+    - rcu lock for fast read of each cpu load
 */
 void load_balance_wrr()
 {

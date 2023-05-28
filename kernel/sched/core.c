@@ -2140,6 +2140,7 @@ int wake_up_state(struct task_struct *p, unsigned int state)
  * p is forked by current.
  *
  * __sched_fork() is basic setup used by init_idle() too:
+ * Initialize list_node of wrr_se here
  */
 static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 {
@@ -2316,6 +2317,7 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 
 	/*
 	 * Revert to default priority/policy on fork if requested.
+	 * Also set the default wrr weight & policy of each task
 	 */
 	if (unlikely(p->sched_reset_on_fork)) {
 		if (task_has_dl_policy(p) || task_has_rt_policy(p) || fair_policy(p->policy)) {
@@ -3071,7 +3073,10 @@ void scheduler_tick(void)
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
 
-	
+	/*
+	* Need to get load_balance_lock for synchronized load balance
+	* Check jiffies if we should start load balancing
+	*/	
 	raw_spin_lock(&wrr_load_balance_lock);
 	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
 	{
