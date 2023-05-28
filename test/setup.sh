@@ -1,5 +1,5 @@
 #!/bin/bash
-./factorizeLoop_hide 1 &
+./trial_bg 1 &
 ./factorizeLoop_hide 2 &
 ./factorizeLoop_hide 3 &
 ./factorizeLoop_hide 4 &
