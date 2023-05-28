@@ -30,7 +30,7 @@ void factorize(int num){
 int main(int argc, char *argv[])
 {
     if(argc != 3){
-        printf("Usage: ./factorize [self_weight]\n");
+        printf("Usage: ./trial [self_weight] [loop_num]\n");
         return 0;
     }
     if(!isdigit(*argv[1])){
