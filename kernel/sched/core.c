@@ -4047,6 +4047,10 @@ SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
 		raw_spin_lock(&task_rq(task)->lock);
 		task_rq(task)->wrr.load -= orig_weight;
 		task_rq(task)->wrr.load += weight;
+		if(task_rq(task)->curr != task)
+		{
+			(task->wrr_se).rem_time_slice = weight * (10 * HZ / 1000);
+		}
 		raw_spin_unlock(&task_rq(task)->lock);
 	}
 	raw_spin_unlock(&task->pi_lock);
