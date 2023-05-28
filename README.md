@@ -87,7 +87,6 @@ The following scheduler class functions of `wrr_sched_class` are implemented in 
 * `enqueue_task_wrr`	: enqueue a task into the queue
 * `dequeue_task_wrr`	: dequeue a task from the queue
 * `yield_task_wrr`	: move a task at the front of the queue to the rear
-* `yield_to_task_wrr`	: ??
 * `pick_next_task_wrr`	: pick the next task to run(i.e. the task at the front of the queue)
 * `select_task_rq_wrr`	: find the wrr_rq with the smallest weight(for choosing which wrr_rq to enqueue a new task to)
 * `task_tick_wrr`	: the necessary actions per tick(if the currently running task has run out of its timeslice, move it to the rear of the queue and mark the task for rescheduling)
