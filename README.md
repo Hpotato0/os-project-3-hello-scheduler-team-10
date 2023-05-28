@@ -28,7 +28,7 @@ kernel build and run qmeu
 ### WRR schedling test
 ```base
 root/./setup.sh
-root/./log.sh test_weight // test_weight will be the weight of the your performance test process
+root/./log.sh test_weight  # test_weight will be the weight of the your performance test process
 ```
 
 ### Load balancing test
