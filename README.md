@@ -28,13 +28,13 @@ The kernel build, test code compilation & running procedure did not change from 
 ```
 
 ### WRR scheduling test
-```base
+```bash
 root$ ./setup.sh			# start 20 background testing enviroonment program
 root$ ./log.sh test_weight  		# test_weight will be the weight of the your performance test process
 ```
 
 ### Load balancing test
-```base
+```bash
 root$ ./printWRRRloads		# periodicaly print load state of each wrr_rq
 root$ ./setup.sh		# start 20 background testing enviroonment program
 root$ ./log.sh test_weight  	# test_weight will be the weight of the your performance test process
