@@ -5,12 +5,25 @@
 ## 0. Running & Testing
 The kernel build, test code compilation & running procedure did not change from project0 README. Optionally, the Makefile located in `test/` can be used to simplify the compilation of test code, as demonstrated in the following example.
 ```bash
-# trial.c -> trial
-/project-3-hello-scheduler-team-10/test$ make NAME=trial    			# do naive trial divistion for finite num and print turnaround time
-/project-3-hello-scheduler-team-10/test$ make NAME=trial_bg 			# infinitly trial division
-/project-3-hello-scheduler-team-10/test$ make NAME=printWRRloads 		# periodicly print load of each wrr rq
-/project-3-hello-scheduler-team-10/test$ make NAME=sched_setweight		# 'wrapper' code of the new system call sched_setweight
-/project-3-hello-scheduler-team-10/test$ make NAME=sched_getweight		# 'wrapper' code of the new system call sched getweight
+# usage: ./trial [self_weight] [loop_num]
+# set weight to [self_weight] and repeat naive division trial factorization [loop_num} times
+/project-3-hello-scheduler-team-10/test$ make NAME=trial
+
+# usage: ./trial_bg [self_weight]
+# set weight to [self_weight] and repeat naive division trial factorization in an infinite loop
+/project-3-hello-scheduler-team-10/test$ make NAME=trial_bg 		
+
+# usage: ./printWRRloads
+# print the loads of each wrr_rq in order
+/project-3-hello-scheduler-team-10/test$ make NAME=printWRRloads
+
+# usage: ./sched_setweight [pid] [weight]
+# call the new system call sched_setweight([pid], [weight])
+/project-3-hello-scheduler-team-10/test$ make NAME=sched_setweight
+
+# usage: ./sched_getweight [pid[
+# call the new system call sched_getweight([pid]) and print the returned weight value
+/project-3-hello-scheduler-team-10/test$ make NAME=sched_getweight
 ```
 
 ## How to test 
