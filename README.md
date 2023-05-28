@@ -37,7 +37,7 @@ root$ ./log.sh test_weight  		# test_weight will be the weight of the your perfo
 ```bash
 root$ ./setup.sh		# start 20 background testing enviroonment program
 root$ ./log.sh test_weight  	# test_weight will be the weight of the your performance test process
-root$ ./printWRRloads		# print the loads if each WRR queue
+root$ ./printWRRloads		# print the loads of each WRR queue
 ```
 
 ## 1. Implementation Overview
