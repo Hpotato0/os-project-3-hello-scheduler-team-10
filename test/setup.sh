@@ -1,0 +1,21 @@
+#!/bin/bash
+./trial_bg 1 &
+./trial_bg 2 &
+./trial_bg 3 &
+./trial_bg 4 &
+./trial_bg 5 &
+./trial_bg 6 &
+./trial_bg 7 &
+./trial_bg 8 &
+./trial_bg 9 &
+./trial_bg 10 &
+./trial_bg 11 &
+./trial_bg 12 &
+./trial_bg 13 &
+./trial_bg 14 &
+./trial_bg 15 &
+./trial_bg 16 &
+./trial_bg 17 &
+./trial_bg 18 &
+./trial_bg 19 &
+./trial_bg 20 &

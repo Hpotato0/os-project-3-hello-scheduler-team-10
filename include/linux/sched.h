@@ -443,6 +443,13 @@ struct sched_statistics {
 #endif
 };
 
+struct sched_wrr_entity {
+	struct list_head list_node;
+	int weight;
+	int rem_time_slice; // unit: ms
+	struct wrr_rq * wrr;
+};
+
 struct sched_entity {
 	/* For load-balancing: */
 	struct load_weight		load;
@@ -644,6 +651,7 @@ struct task_struct {
 	const struct sched_class	*sched_class;
 	struct sched_entity		se;
 	struct sched_rt_entity		rt;
+	struct sched_wrr_entity 	wrr_se;
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group		*sched_task_group;
 #endif

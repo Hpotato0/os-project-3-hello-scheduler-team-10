@@ -60,6 +60,10 @@ __read_mostly int scheduler_running;
  */
 int sysctl_sched_rt_runtime = 950000;
 
+unsigned long last_balance_jiffies = 0;
+
+raw_spinlock_t wrr_load_balance_lock;
+
 /*
  * __task_rq_lock - lock the rq @p resides on.
  */
@@ -455,7 +459,6 @@ void resched_curr(struct rq *rq)
 {
 	struct task_struct *curr = rq->curr;
 	int cpu;
-
 	lockdep_assert_held(&rq->lock);
 
 	if (test_tsk_need_resched(curr))
@@ -751,6 +754,8 @@ void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
 {
 	if (task_contributes_to_load(p))
 		rq->nr_uninterruptible++;
+
+	// printk(KERN_DEBUG "%s %d %d %s\n", __func__, cpu_of(rq), p->pid, p->comm);
 
 	dequeue_task(rq, p, flags);
 }
@@ -2135,6 +2140,7 @@ int wake_up_state(struct task_struct *p, unsigned int state)
  * p is forked by current.
  *
  * __sched_fork() is basic setup used by init_idle() too:
+ * Initialize list_node of wrr_se here
  */
 static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 {
@@ -2147,6 +2153,8 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	p->se.nr_migrations		= 0;
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
+
+	INIT_LIST_HEAD(&p->wrr_se.list_node);
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	p->se.cfs_rq			= NULL;
@@ -2309,13 +2317,18 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 
 	/*
 	 * Revert to default priority/policy on fork if requested.
+	 * Also set the default wrr weight & policy of each task
 	 */
 	if (unlikely(p->sched_reset_on_fork)) {
-		if (task_has_dl_policy(p) || task_has_rt_policy(p)) {
-			p->policy = SCHED_NORMAL;
+		if (task_has_dl_policy(p) || task_has_rt_policy(p) || fair_policy(p->policy)) {
+			//p->policy = SCHED_NORMAL;
+			p-> policy = SCHED_WRR; 
 			p->static_prio = NICE_TO_PRIO(0);
 			p->rt_priority = 0;
-		} else if (PRIO_TO_NICE(p->static_prio) < 0)
+			p->wrr_se.weight = 10;
+			p->wrr_se.rem_time_slice = 100;
+		} 
+		else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
 
 		p->prio = p->normal_prio = __normal_prio(p);
@@ -2333,7 +2346,7 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
 	else
-		p->sched_class = &fair_sched_class;
+		p->sched_class = &wrr_sched_class;
 
 	init_entity_runnable_average(&p->se);
 
@@ -2787,7 +2800,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	       struct task_struct *next, struct rq_flags *rf)
 {
 	struct mm_struct *mm, *oldmm;
-
+	// printk(KERN_DEBUG"%s %d %d %s\n", __func__, cpu_of(task_rq(next)), next->pid, next->comm);
 	prepare_task_switch(rq, prev, next);
 
 	mm = next->mm;
@@ -3059,6 +3072,20 @@ void scheduler_tick(void)
 #ifdef CONFIG_SMP
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq);
+
+	/*
+	* Need to get load_balance_lock for synchronized load balance
+	* Check jiffies if we should start load balancing
+	*/	
+	raw_spin_lock(&wrr_load_balance_lock);
+	if(time_after_eq(jiffies, last_balance_jiffies + 2*HZ))
+	{
+		last_balance_jiffies = jiffies;
+		load_balance_wrr();
+	}
+	raw_spin_unlock(&wrr_load_balance_lock);
+	
+	
 #endif
 }
 
@@ -3253,7 +3280,7 @@ static noinline void __schedule_bug(struct task_struct *prev)
 {
 	/* Save this before calling printk(), since that will clobber it */
 	unsigned long preempt_disable_ip = get_preempt_disable_ip(current);
-
+	// debug
 	if (oops_in_progress)
 		return;
 
@@ -3303,7 +3330,7 @@ static inline void schedule_debug(struct task_struct *prev)
  */
 static inline struct task_struct *
 pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
-{
+{ // @J TODO: fix this
 	const struct sched_class *class;
 	struct task_struct *p;
 
@@ -3388,7 +3415,7 @@ static void __sched notrace __schedule(bool preempt)
 	struct rq_flags rf;
 	struct rq *rq;
 	int cpu;
-
+    
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	prev = rq->curr;
@@ -3838,7 +3865,7 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 			p->dl.dl_boosted = 0;
 		if (rt_prio(oldprio))
 			p->rt.timeout = 0;
-		p->sched_class = &fair_sched_class;
+		p->sched_class = &wrr_sched_class;
 	}
 
 	p->prio = prio;
@@ -3969,6 +3996,102 @@ SYSCALL_DEFINE1(nice, int, increment)
 #endif
 
 /**
+ * sched_setweight - sets a weight of a task
+ * if it's scheduled by WRR
+ */
+SYSCALL_DEFINE2(sched_setweight, pid_t, pid, unsigned int, weight){
+    struct task_struct* task;
+    int orig_weight;
+
+    if(pid < 0 || weight < 1 || weight > 20){
+        return -EINVAL;
+    }
+
+	// if pid == 0 act on the task that called
+	if(pid != 0)
+    	task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	else
+		task = current;
+    
+    if(task == NULL){
+        return -ESRCH;
+    }
+
+    if(task->policy != SCHED_WRR){
+        return -EINVAL;
+    }
+
+	// task_on_rq_queued & weight must not change during this process (could effect load)
+	raw_spin_lock(&task->pi_lock);
+	orig_weight = (task->wrr_se).weight;
+
+	if(orig_weight < weight){
+		// only root can increase weight
+		if(!uid_eq(current_uid(), KUIDT_INIT(0))){
+			raw_spin_unlock(&task->pi_lock);
+			return -EPERM;
+		}
+	}
+	else{
+		// only root or owner of the task can decrease its weight
+		if(!(uid_eq(current_uid(), KUIDT_INIT(0)) || uid_eq(current_uid(), task_uid(task)))){
+			raw_spin_unlock(&task->pi_lock);
+			return -EPERM;
+		}
+	}
+
+	(task->wrr_se).weight = weight;
+
+	if(task_on_rq_queued(task))
+	{	// the task is definately inside the WRR queue at this point
+		raw_spin_lock(&task_rq(task)->lock);
+		task_rq(task)->wrr.load -= orig_weight;
+		task_rq(task)->wrr.load += weight;
+		if(task_rq(task)->curr != task)
+		{
+			(task->wrr_se).rem_time_slice = weight * (10 * HZ / 1000);
+		}
+		raw_spin_unlock(&task_rq(task)->lock);
+	}
+	raw_spin_unlock(&task->pi_lock);
+    
+    return 0;
+}
+
+/**
+ * sched_getweight - if the task is scheduled by WRR,
+ * return the task's weight
+ */
+SYSCALL_DEFINE1(sched_getweight, pid_t, pid){
+    struct task_struct* task;
+	long w;
+
+    if(pid < 0){
+        return -EINVAL;
+    }
+
+	if(pid != 0)
+    	task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+	else
+		task = current;
+    
+    if(task == NULL){
+        return -ESRCH;
+    }
+
+    if(task->policy != SCHED_WRR){
+        return -EINVAL;
+    }
+
+	// only reading.. even this lock may be redundant
+	rcu_read_lock();
+	w = (task->wrr_se).weight;
+	rcu_read_unlock();
+	
+    return w;
+}
+
+/**
  * task_prio - return the priority value of a given task.
  * @p: the task in question.
  *
@@ -4093,6 +4216,8 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
 		p->sched_class = &dl_sched_class;
 	else if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
+	else if(p->policy == SCHED_WRR)
+		p->sched_class = &wrr_sched_class;
 	else
 		p->sched_class = &fair_sched_class;
 }
@@ -4137,7 +4262,7 @@ recheck:
 	} else {
 		reset_on_fork = !!(attr->sched_flags & SCHED_FLAG_RESET_ON_FORK);
 
-		if (!valid_policy(policy))
+		if (!valid_policy(policy) && policy != SCHED_WRR)
 			return -EINVAL;
 	}
 
@@ -4244,6 +4369,8 @@ recheck:
 		if (rt_policy(policy) && attr->sched_priority != p->rt_priority)
 			goto change;
 		if (dl_policy(policy) && dl_param_changed(p, attr))
+			goto change;
+		if (policy == SCHED_WRR)
 			goto change;
 
 		p->sched_reset_on_fork = reset_on_fork;
@@ -4359,13 +4486,15 @@ change:
 static int _sched_setscheduler(struct task_struct *p, int policy,
 			       const struct sched_param *param, bool check)
 {
-	if (fair_policy(policy)) policy = SCHED_WRR;
 
 	struct sched_attr attr = {
 		.sched_policy   = policy,
 		.sched_priority = param->sched_priority,
 		.sched_nice	= PRIO_TO_NICE(p->static_prio),
 	};
+
+	if (fair_policy(policy)) 
+		attr.sched_policy = SCHED_WRR;
 
 	/* Fixup the legacy SCHED_RESET_ON_FORK hack. */
 	if ((policy != SETPARAM_POLICY) && (policy & SCHED_RESET_ON_FORK)) {
@@ -5166,6 +5295,7 @@ SYSCALL_DEFINE1(sched_get_priority_max, int, policy)
 	case SCHED_NORMAL:
 	case SCHED_BATCH:
 	case SCHED_IDLE:
+	case SCHED_WRR:
 		ret = 0;
 		break;
 	}
@@ -5193,6 +5323,7 @@ SYSCALL_DEFINE1(sched_get_priority_min, int, policy)
 	case SCHED_NORMAL:
 	case SCHED_BATCH:
 	case SCHED_IDLE:
+	case SCHED_WRR:
 		ret = 0;
 	}
 	return ret;
@@ -5979,6 +6110,7 @@ void __init sched_init(void)
 	autogroup_init(&init_task);
 #endif /* CONFIG_CGROUP_SCHED */
 
+	raw_spin_lock_init(&wrr_load_balance_lock);
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 
@@ -5988,6 +6120,7 @@ void __init sched_init(void)
 		rq->calc_load_active = 0;
 		rq->calc_load_update = jiffies + LOAD_FREQ;
 		init_cfs_rq(&rq->cfs);
+		init_wrr_rq(&rq->wrr);
 		init_rt_rq(&rq->rt);
 		init_dl_rq(&rq->dl);
 #ifdef CONFIG_FAIR_GROUP_SCHED
@@ -6074,6 +6207,7 @@ void __init sched_init(void)
 	idle_thread_set_boot_cpu();
 #endif
 	init_sched_fair_class();
+	init_sched_wrr_class();
 
 	init_schedstats();
 

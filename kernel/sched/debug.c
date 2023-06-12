@@ -605,6 +605,19 @@ void print_rt_rq(struct seq_file *m, int cpu, struct rt_rq *rt_rq)
 #undef P
 }
 
+void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
+{
+	SEQ_printf(m, "\n");
+	SEQ_printf(m, "wrr_rq[%d]:\n", cpu);
+
+#define P(x) \
+	SEQ_printf(m, "  .%-30s: %Ld\n", #x, (long long)(wrr_rq->x))
+
+	P(load);
+
+#undef P
+}
+
 void print_dl_rq(struct seq_file *m, int cpu, struct dl_rq *dl_rq)
 {
 	struct dl_bw *dl_bw;
@@ -691,6 +704,7 @@ do {									\
 #undef P
 
 	spin_lock_irqsave(&sched_debug_lock, flags);
+	print_wrr_stats(m, cpu);
 	print_cfs_stats(m, cpu);
 	print_rt_stats(m, cpu);
 	print_dl_stats(m, cpu);

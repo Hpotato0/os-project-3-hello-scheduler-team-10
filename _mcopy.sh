@@ -1,5 +1,11 @@
 #!/bin/bash
-
+TARGET=$1
+mkdir mntdir
+wait
 sudo mount tizen-image/rootfs.img ./mntdir
-sudo cp project1_test ./mntdir/root
+wait
+sudo cp "$TARGET" ./mntdir/root
+wait
 sudo umount ./mntdir
+wait
+rm -r mntdir

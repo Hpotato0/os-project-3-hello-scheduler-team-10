@@ -477,6 +477,12 @@ struct cfs_bandwidth { };
 
 #endif	/* CONFIG_CGROUP_SCHED */
 
+// Wrr-realated fields in a runqueue
+struct wrr_rq {
+	struct list_head wrr_list;
+	int load;
+};
+
 /* CFS-related fields in a runqueue */
 struct cfs_rq {
 	struct load_weight	load;
@@ -806,9 +812,9 @@ struct rq {
 	u64			nr_switches;
 
 	struct cfs_rq		cfs;
+	struct wrr_rq		wrr;
 	struct rt_rq		rt;
 	struct dl_rq		dl;
-
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	/* list of leaf cfs_rq on this CPU: */
 	struct list_head	leaf_cfs_rq_list;
@@ -1583,6 +1589,7 @@ static inline void set_curr_task(struct rq *rq, struct task_struct *curr)
 extern const struct sched_class stop_sched_class;
 extern const struct sched_class dl_sched_class;
 extern const struct sched_class rt_sched_class;
+extern const struct sched_class wrr_sched_class;
 extern const struct sched_class fair_sched_class;
 extern const struct sched_class idle_sched_class;
 
@@ -1595,6 +1602,7 @@ extern void trigger_load_balance(struct rq *rq);
 
 extern void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask);
 
+extern void load_balance_wrr(void);
 #endif
 
 #ifdef CONFIG_CPU_IDLE
@@ -1630,6 +1638,7 @@ extern void update_max_interval(void);
 
 extern void init_sched_dl_class(void);
 extern void init_sched_rt_class(void);
+extern void init_sched_wrr_class(void);
 extern void init_sched_fair_class(void);
 
 extern void reweight_task(struct task_struct *p, int prio);
@@ -2044,9 +2053,11 @@ extern struct sched_entity *__pick_last_entity(struct cfs_rq *cfs_rq);
 #ifdef	CONFIG_SCHED_DEBUG
 extern bool sched_debug_enabled;
 
+extern void print_wrr_stats(struct seq_file *m, int cpu);
 extern void print_cfs_stats(struct seq_file *m, int cpu);
 extern void print_rt_stats(struct seq_file *m, int cpu);
 extern void print_dl_stats(struct seq_file *m, int cpu);
+extern void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq);
 extern void print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq);
 extern void print_rt_rq(struct seq_file *m, int cpu, struct rt_rq *rt_rq);
 extern void print_dl_rq(struct seq_file *m, int cpu, struct dl_rq *dl_rq);
@@ -2060,6 +2071,7 @@ print_numa_stats(struct seq_file *m, int node, unsigned long tsf,
 #endif /* CONFIG_SCHED_DEBUG */
 
 extern void init_cfs_rq(struct cfs_rq *cfs_rq);
+extern void init_wrr_rq(struct wrr_rq *wrr_rq);
 extern void init_rt_rq(struct rt_rq *rt_rq);
 extern void init_dl_rq(struct dl_rq *dl_rq);
 
